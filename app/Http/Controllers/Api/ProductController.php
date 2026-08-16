@@ -71,5 +71,3 @@ class ProductController extends Controller
         return response()->json(['message' => 'تم حذف الصورة بنجاح']);
     }
 }
-
-

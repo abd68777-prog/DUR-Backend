@@ -7,8 +7,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Svix\Webhook;
 use Svix\Exception\WebhookVerificationException;
+use Svix\Webhook;
 
 class ClerkWebhookController extends Controller
 {
@@ -28,6 +28,7 @@ class ClerkWebhookController extends Controller
             $verified = $wh->verify($payload, $headers);
         } catch (WebhookVerificationException $e) {
             Log::warning('Clerk webhook verification failed', ['error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Invalid signature'], 400);
         }
 

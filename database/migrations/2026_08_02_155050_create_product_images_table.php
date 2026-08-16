@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('product_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('path'); // مسار محلي الآن، رابط CDN لاحقاً
             $table->unsignedInteger('sort_order')->default(0);

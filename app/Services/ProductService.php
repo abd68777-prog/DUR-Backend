@@ -21,7 +21,7 @@ class ProductService
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where('name', 'like', '%'.$filters['search'].'%');
         }
 
@@ -32,7 +32,7 @@ class ProductService
     {
         $product = Product::create($data);
 
-        if (!empty($images)) {
+        if (! empty($images)) {
             $this->attachImages($product, $images);
         }
 
@@ -43,7 +43,7 @@ class ProductService
     {
         $product->update($data);
 
-        if (!empty($images)) {
+        if (! empty($images)) {
             $this->attachImages($product, $images);
         }
 
@@ -52,7 +52,7 @@ class ProductService
 
     public function toggleActive(Product $product): Product
     {
-        $product->update(['is_active' => !$product->is_active]);
+        $product->update(['is_active' => ! $product->is_active]);
 
         return $product->fresh();
     }
@@ -96,7 +96,7 @@ class ProductService
             $product->images()->create([
                 'path' => $path,
                 'sort_order' => $currentMax + $index + 1,
-                'is_primary' => !$hasPrimaryAlready && $index === 0,
+                'is_primary' => ! $hasPrimaryAlready && $index === 0,
             ]);
         }
     }

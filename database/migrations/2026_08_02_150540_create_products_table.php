@@ -12,13 +12,13 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('category_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('name');
             $table->text('description')->nullable();
 
-            // تفاصيل المجوهرات 
+            // تفاصيل المجوهرات
             $table->decimal('gold_weight', 8, 3)->nullable();
             $table->enum('karat', ['18', '21', '24'])->nullable();
             $table->string('gemstone_type')->nullable();

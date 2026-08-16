@@ -4,8 +4,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ClerkWebhookController as ApiClerkWebhookController;
 use App\Http\Controllers\Api\DashboardController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
+use Illuminate\Support\Facades\Route;
+
 // أي مستخدم مسجل دخول (أي دور)
 Route::middleware('auth:clerk')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
@@ -26,9 +27,6 @@ Route::middleware(['auth:clerk', 'role:admin'])->group(function () {
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 });
 Route::post('/webhooks/clerk', [ApiClerkWebhookController::class, 'handle']);
-
-
-
 
 Route::middleware(['auth:clerk', 'role:admin,manager'])->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
