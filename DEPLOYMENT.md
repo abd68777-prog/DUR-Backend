@@ -8,7 +8,7 @@
 ## 1. متطلبات السيرفر
 
 - Ubuntu 22.04+ (أو أي توزيعة Linux مشابهة)
-- PHP 8.2+ مع الإضافات: `mbstring, pdo_mysql, gd, zip, bcmath, curl, fileinfo`
+- PHP 8.3+ مع الإضافات: `mbstring, pdo_mysql, gd, zip, bcmath, curl, fileinfo` (لاحظ: 8.3 مطلوب فعلياً بسبب `ronasit/laravel-clerk`، مش 8.2)
 - Composer
 - MySQL 8+ (أو أي قاعدة بيانات متوافقة)
 - Nginx
@@ -74,7 +74,7 @@ server {
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
     }

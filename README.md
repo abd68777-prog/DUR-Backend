@@ -6,7 +6,7 @@ Backend لمتجر مجوهرات (ذهب ومجوهرات) مبني على Lara
 
 | الطبقة | التقنية |
 |---|---|
-| Framework | Laravel 12 (PHP 8.2+) |
+| Framework | Laravel 12 (PHP 8.3+) |
 | المصادقة | [Clerk](https://clerk.com) عبر `ronasit/laravel-clerk` |
 | قاعدة البيانات | MySQL |
 | تخزين الصور | Cloudinary (عبر `cloudinary-labs/cloudinary-laravel`) |
