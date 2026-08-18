@@ -7,11 +7,22 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use OpenApi\Attributes as OA;
 use Svix\Exception\WebhookVerificationException;
 use Svix\Webhook;
 
 class ClerkWebhookController extends Controller
 {
+    #[OA\Post(
+        path: '/webhooks/clerk',
+        summary: 'Clerk webhook (لسه ما بيلمسه الفرونت-إند)',
+        description: 'مسار داخلي بينادى من Clerk فقط، محمي بتوقيع Svix (svix-id/svix-timestamp/svix-signature headers). بيعالج حدث user.created لإنشاء المستخدم بقاعدة البيانات.',
+        tags: ['Webhooks'],
+        responses: [
+            new OA\Response(response: 200, description: 'تمت المعالجة', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
+            new OA\Response(response: 400, description: 'توقيع غير صحيح', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function handle(Request $request): JsonResponse
     {
         $secret = config('services.clerk.webhook_secret');

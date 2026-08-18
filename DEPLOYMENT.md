@@ -40,6 +40,7 @@ chmod -R 775 storage bootstrap/cache
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan l5-swagger:generate
 ```
 
 ## 3. قيم `.env` اللي لازم تتعبّى بالإنتاج
@@ -147,6 +148,7 @@ git pull origin main
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
 php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan l5-swagger:generate
 php artisan queue:restart
 ```
 
@@ -160,5 +162,6 @@ git checkout <commit-hash>
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force   # فقط لو في migration لازم ترجع، وبحذر
 php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan l5-swagger:generate
 php artisan queue:restart
 ```

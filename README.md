@@ -46,7 +46,25 @@ Category  1 ── * Product  1 ── * ProductImage
 
 حذف Category بيحذف منتجاتها تلقائياً (`cascadeOnDelete`). حذف Product بيحذف صوره من Cloudinary قبل حذف السجل.
 
+## توثيق الـ API (Swagger / OpenAPI)
+
+كل الـ endpoints موثّقة بالكامل عبر [darkaonline/l5-swagger](https://github.com/DarkaOnLine/L5-Swagger) — الوثائق التفاعلية (Swagger UI) بتشتغل مباشرة من الكود عبر PHP Attributes (`#[OA\...]`) موجودة بالـ Controllers والـ Requests والـ Resources، فبتضل متزامنة مع الكود الفعلي.
+
+**رابط الوثائق:**
+- محلياً: `http://localhost:8000/api/documentation`
+- بالإنتاج: `https://<دومين-الـ-API>/api/documentation`
+
+الوثائق بترجع كل: الـ paths، الـ query/path parameters، شكل الـ request body (JSON أو multipart لرفع الصور)، وكل حالات الاستجابة (200/201/401/403/404/422) بأمثلة حقيقية — ومزوّدة بزر **Authorize** لتجربة الـ endpoints مباشرة بتوكن Clerk (`Authorization: Bearer <token>`).
+
+**تحديث الوثائق بعد أي تعديل بالـ API:**
+```bash
+php artisan l5-swagger:generate
+```
+هاي الخطوة مضافة تلقائياً بخطوات النشر (CI/CD)، فما في داعي تشغّلها يدوياً إلا للمعاينة المحلية.
+
 ## الـ Endpoints بالتفصيل
+
+> الجداول تحت ملخّص سريع فقط — المرجع الكامل والدقيق هو Swagger (`/api/documentation`).
 
 ### Products
 | Method | Path | الوصف |
