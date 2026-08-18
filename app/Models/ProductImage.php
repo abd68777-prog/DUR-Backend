@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -20,10 +20,10 @@ class ProductImage extends Model
         return ['is_primary' => 'boolean'];
     }
 
-    protected function url(): \Illuminate\Database\Eloquent\Casts\Attribute
+    protected function url(): Attribute
     {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: fn () => Storage::disk('cloudinary')->url($this->path),
+        return Attribute::make(
+            get: fn () => (string) cloudinary()->image($this->path)->toUrl(),
         );
     }
 

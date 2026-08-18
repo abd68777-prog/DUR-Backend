@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\ProductService;
@@ -21,12 +22,14 @@ class ProductController extends Controller
             $request->only(['category_id', 'is_active', 'search', 'per_page'])
         );
 
+        $products->through(fn (Product $product) => new ProductResource($product));
+
         return response()->json($products);
     }
 
     public function show(Product $product): JsonResponse
     {
-        return response()->json($product->load('images', 'category'));
+        return response()->json(new ProductResource($product->load('images', 'category')));
     }
 
     public function store(StoreProductRequest $request): JsonResponse
@@ -36,7 +39,7 @@ class ProductController extends Controller
             $request->file('images', [])
         );
 
-        return response()->json($product, 201);
+        return response()->json(new ProductResource($product), 201);
     }
 
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
@@ -47,14 +50,14 @@ class ProductController extends Controller
             $request->file('images', [])
         );
 
-        return response()->json($product);
+        return response()->json(new ProductResource($product));
     }
 
     public function toggleActive(Product $product): JsonResponse
     {
         $product = $this->productService->toggleActive($product);
 
-        return response()->json($product);
+        return response()->json(new ProductResource($product));
     }
 
     public function destroy(Product $product): JsonResponse

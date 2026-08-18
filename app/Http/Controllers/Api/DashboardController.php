@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ProductResource;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
@@ -24,15 +26,21 @@ class DashboardController extends Controller
                 'active' => Product::where('is_active', true)->count(),
                 'inactive' => Product::where('is_active', false)->count(),
             ],
-            'products_by_category' => Category::withCount('products')->get(['id', 'name']),
-            'low_stock_products' => Product::where('stock', '<', self::LOW_STOCK_THRESHOLD)
-                ->with('category')
-                ->orderBy('stock')
-                ->get(),
-            'latest_products' => Product::with('category')
-                ->latest()
-                ->take(10)
-                ->get(),
+            'products_by_category' => CategoryResource::collection(
+                Category::withCount('products')->get()
+            ),
+            'low_stock_products' => ProductResource::collection(
+                Product::where('stock', '<', self::LOW_STOCK_THRESHOLD)
+                    ->with('category')
+                    ->orderBy('stock')
+                    ->get()
+            ),
+            'latest_products' => ProductResource::collection(
+                Product::with('category')
+                    ->latest()
+                    ->take(10)
+                    ->get()
+            ),
         ]);
     }
 }
