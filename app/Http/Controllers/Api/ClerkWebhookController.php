@@ -15,12 +15,12 @@ class ClerkWebhookController extends Controller
 {
     #[OA\Post(
         path: '/webhooks/clerk',
-        summary: 'Clerk webhook (لسه ما بيلمسه الفرونت-إند)',
-        description: 'مسار داخلي بينادى من Clerk فقط، محمي بتوقيع Svix (svix-id/svix-timestamp/svix-signature headers). بيعالج حدث user.created لإنشاء المستخدم بقاعدة البيانات.',
+        summary: 'Clerk webhook (not called by the frontend)',
+        description: 'Internal endpoint called only by Clerk, protected by a Svix signature (svix-id/svix-timestamp/svix-signature headers). Handles the user.created event to create the user in the database.',
         tags: ['Webhooks'],
         responses: [
-            new OA\Response(response: 200, description: 'تمت المعالجة', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
-            new OA\Response(response: 400, description: 'توقيع غير صحيح', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 200, description: 'Processed', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
+            new OA\Response(response: 400, description: 'Invalid signature', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function handle(Request $request): JsonResponse
@@ -65,7 +65,7 @@ class ClerkWebhookController extends Controller
         User::firstOrCreate(
             ['clerk_id' => $clerkId],
             [
-                'name' => trim("{$firstName} {$lastName}") ?: 'مستخدم Clerk',
+                'name' => trim("{$firstName} {$lastName}") ?: 'Clerk User',
                 'email' => $email ?? "{$clerkId}@placeholder.clerk",
                 'password' => bcrypt(str()->random(32)),
                 'role' => 'customer',

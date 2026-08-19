@@ -29,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return response()->json(['message' => 'يجب تسجيل الدخول للوصول لهذا المورد'], 401);
+            return response()->json(['message' => 'You must be logged in to access this resource.'], 401);
         });
 
         $exceptions->render(function (ValidationException $e, Request $request) {
@@ -48,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return response()->json(['message' => 'العنصر المطلوب غير موجود'], 404);
+            return response()->json(['message' => 'The requested resource was not found.'], 404);
         });
 
         $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
@@ -57,7 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json([
-                'message' => $e->getMessage() ?: 'حدث خطأ أثناء معالجة الطلب',
+                'message' => $e->getMessage() ?: 'An error occurred while processing the request.',
             ], $e->getStatusCode());
         });
 
@@ -66,6 +66,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return response()->json(['message' => 'حدث خطأ في الخادم'], 500);
+            return response()->json(['message' => 'A server error occurred.'], 500);
         });
     })->create();

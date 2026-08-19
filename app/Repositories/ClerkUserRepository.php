@@ -20,9 +20,9 @@ class ClerkUserRepository implements UserRepositoryContract
         return User::firstOrCreate(
             ['clerk_id' => $clerkId],
             [
-                'name' => trim("{$firstName} {$lastName}") ?: 'مستخدم Clerk',
+                'name' => trim("{$firstName} {$lastName}") ?: 'Clerk User',
                 'email' => $email ?? "{$clerkId}@placeholder.clerk",
-                'password' => bcrypt(str()->random(32)), // لو عمود password عندك NOT NULL
+                'password' => bcrypt(str()->random(32)), // in case the password column is NOT NULL
                 'role' => 'customer',
             ]
         );

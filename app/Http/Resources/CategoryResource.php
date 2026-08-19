@@ -15,7 +15,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'name_en', type: 'string', example: 'Rings'),
         new OA\Property(property: 'slug', type: 'string', example: 'rings'),
         new OA\Property(property: 'is_active', type: 'boolean', example: true),
-        new OA\Property(property: 'products_count', type: 'integer', nullable: true, example: 12, description: 'موجود فقط بمكان محدد مثل /dashboard/stats'),
+        new OA\Property(property: 'products_count', type: 'integer', nullable: true, example: 12, description: 'Only present in specific places such as /dashboard/stats'),
     ]
 )]
 class CategoryResource extends JsonResource

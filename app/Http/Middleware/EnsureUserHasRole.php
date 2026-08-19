@@ -14,7 +14,7 @@ class EnsureUserHasRole
 
         if (! $user || ! in_array($user->role, $roles, true)) {
             return response()->json([
-                'message' => 'ليس لديك صلاحية للوصول لهذا المورد',
+                'message' => 'You do not have permission to access this resource.',
             ], 403);
         }
 

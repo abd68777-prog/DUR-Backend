@@ -14,7 +14,7 @@ class ErrorResponseTest extends TestCase
     {
         $this->getJson('/api/user')
             ->assertStatus(401)
-            ->assertJson(['message' => 'يجب تسجيل الدخول للوصول لهذا المورد']);
+            ->assertJson(['message' => 'You must be logged in to access this resource.']);
     }
 
     public function test_forbidden_request_returns_standard_json_shape(): void
@@ -24,7 +24,7 @@ class ErrorResponseTest extends TestCase
         $this->actingAs($customer, 'clerk')
             ->getJson('/api/dashboard/stats')
             ->assertStatus(403)
-            ->assertJson(['message' => 'ليس لديك صلاحية للوصول لهذا المورد']);
+            ->assertJson(['message' => 'You do not have permission to access this resource.']);
     }
 
     public function test_missing_model_returns_standard_json_shape(): void
@@ -34,7 +34,7 @@ class ErrorResponseTest extends TestCase
         $this->actingAs($user, 'clerk')
             ->getJson('/api/products/999999')
             ->assertStatus(404)
-            ->assertJson(['message' => 'العنصر المطلوب غير موجود']);
+            ->assertJson(['message' => 'The requested resource was not found.']);
     }
 
     public function test_validation_error_returns_standard_json_shape(): void

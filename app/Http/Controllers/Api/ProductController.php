@@ -19,20 +19,20 @@ class ProductController extends Controller
 
     #[OA\Get(
         path: '/products',
-        summary: 'قائمة المنتجات',
-        description: 'قائمة مع pagination وفلاتر اختيارية. متاح لأي مستخدم مسجّل دخول.',
+        summary: 'List products',
+        description: 'Paginated list with optional filters. Available to any authenticated user.',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
             new OA\Parameter(name: 'category_id', in: 'query', schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'is_active', in: 'query', schema: new OA\Schema(type: 'boolean')),
-            new OA\Parameter(name: 'search', in: 'query', description: 'بحث بالاسم', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', description: 'Search by name', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', default: 15)),
         ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'قائمة المنتجات (مقسّمة صفحات)',
+                description: 'Paginated list of products',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Product')),
@@ -41,7 +41,7 @@ class ProductController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'مش مسجّل دخول', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Not authenticated', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function index(Request $request): JsonResponse
@@ -57,15 +57,15 @@ class ProductController extends Controller
 
     #[OA\Get(
         path: '/products/{product}',
-        summary: 'تفاصيل منتج',
+        summary: 'Product details',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
             new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'بيانات المنتج', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
-            new OA\Response(response: 404, description: 'المنتج غير موجود', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 200, description: 'Product data', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function show(Product $product): JsonResponse
@@ -75,8 +75,8 @@ class ProductController extends Controller
 
     #[OA\Post(
         path: '/products',
-        summary: 'إنشاء منتج',
-        description: 'admin أو manager فقط. يدعم رفع صور متعددة.',
+        summary: 'Create a product',
+        description: 'admin or manager only. Supports uploading multiple images.',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         requestBody: new OA\RequestBody(
@@ -87,9 +87,9 @@ class ProductController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'تم إنشاء المنتج', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
-            new OA\Response(response: 422, description: 'بيانات غير صحيحة', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 201, description: 'Product created', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid data', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
         ]
     )]
     public function store(StoreProductRequest $request): JsonResponse
@@ -104,8 +104,8 @@ class ProductController extends Controller
 
     #[OA\Put(
         path: '/products/{product}',
-        summary: 'تعديل منتج',
-        description: 'admin أو manager فقط. الصور المرفوعة بتنضاف للموجودة، ما بتستبدلها.',
+        summary: 'Update a product',
+        description: 'admin or manager only. Uploaded images are added to the existing ones, not replaced.',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
@@ -118,10 +118,10 @@ class ProductController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'تم تعديل المنتج', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
-            new OA\Response(response: 404, description: 'المنتج غير موجود', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
-            new OA\Response(response: 422, description: 'بيانات غير صحيحة', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 200, description: 'Product updated', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid data', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
         ]
     )]
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
@@ -137,17 +137,17 @@ class ProductController extends Controller
 
     #[OA\Patch(
         path: '/products/{product}/toggle-active',
-        summary: 'تفعيل / تعطيل المنتج',
-        description: 'admin أو manager فقط. بتعكس قيمة is_active الحالية.',
+        summary: 'Activate / deactivate a product',
+        description: 'admin or manager only. Flips the current is_active value.',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
             new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'الحالة الجديدة للمنتج', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
-            new OA\Response(response: 404, description: 'المنتج غير موجود', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 200, description: 'The product\'s new state', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function toggleActive(Product $product): JsonResponse
@@ -159,30 +159,30 @@ class ProductController extends Controller
 
     #[OA\Delete(
         path: '/products/{product}',
-        summary: 'حذف منتج',
-        description: 'admin فقط. بيحذف صور المنتج من Cloudinary قبل حذف السجل.',
+        summary: 'Delete a product',
+        description: 'admin only. Deletes the product\'s images from Cloudinary before deleting the record.',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
             new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'تم الحذف', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
-            new OA\Response(response: 404, description: 'المنتج غير موجود', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 200, description: 'Deleted', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function destroy(Product $product): JsonResponse
     {
         $this->productService->delete($product);
 
-        return response()->json(['message' => 'تم حذف المنتج بنجاح']);
+        return response()->json(['message' => 'Product deleted successfully.']);
     }
 
     #[OA\Delete(
         path: '/products/{product}/images/{image}',
-        summary: 'حذف صورة منتج',
-        description: 'admin أو manager فقط. لو الصورة المحذوفة كانت الرئيسية (is_primary)، أول صورة متبقية بترثها.',
+        summary: 'Delete a product image',
+        description: 'admin or manager only. If the deleted image was primary (is_primary), the next remaining image inherits that flag.',
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
@@ -190,15 +190,15 @@ class ProductController extends Controller
             new OA\Parameter(name: 'image', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'تم حذف الصورة', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
-            new OA\Response(response: 404, description: 'الصورة غير موجودة', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 200, description: 'Image deleted', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 404, description: 'Image not found', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function destroyImage(Product $product, ProductImage $image): JsonResponse
     {
         $this->productService->deleteImage($image);
 
-        return response()->json(['message' => 'تم حذف الصورة بنجاح']);
+        return response()->json(['message' => 'Image deleted successfully.']);
     }
 }

@@ -26,7 +26,7 @@ use OpenApi\Attributes as OA;
             property: 'images',
             type: 'array',
             items: new OA\Items(type: 'string', format: 'binary'),
-            description: 'حتى 4 ميجا لكل صورة'
+            description: 'Up to 4MB per image'
         ),
     ]
 )]

@@ -25,7 +25,7 @@ use OpenApi\Attributes as OA;
             property: 'images',
             type: 'array',
             items: new OA\Items(type: 'string', format: 'binary'),
-            description: 'صور إضافية بتنضاف للمنتج (حتى 4 ميجا لكل صورة)'
+            description: 'Additional images added to the product (up to 4MB per image)'
         ),
     ]
 )]

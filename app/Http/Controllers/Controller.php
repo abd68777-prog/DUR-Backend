@@ -7,7 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Info(
     version: '1.0.0',
     title: 'DUR API',
-    description: 'API لمتجر مجوهرات — إدارة المنتجات والتصنيفات، مع مصادقة عبر Clerk.'
+    description: 'API for a jewelry store — manages products and categories, authenticated via Clerk.'
 )]
 #[OA\Server(url: '/api', description: 'API base path')]
 #[OA\SecurityScheme(
@@ -15,12 +15,12 @@ use OpenApi\Attributes as OA;
     type: 'http',
     scheme: 'bearer',
     bearerFormat: 'JWT',
-    description: 'توكن الجلسة (session token) من Clerk، يُرسل كـ: Authorization: Bearer <token>'
+    description: 'Clerk session token, sent as: Authorization: Bearer <token>'
 )]
 #[OA\Schema(
     schema: 'ErrorResponse',
     properties: [
-        new OA\Property(property: 'message', type: 'string', example: 'العنصر المطلوب غير موجود'),
+        new OA\Property(property: 'message', type: 'string', example: 'The requested resource was not found.'),
     ]
 )]
 #[OA\Schema(
@@ -37,7 +37,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'MessageResponse',
     properties: [
-        new OA\Property(property: 'message', type: 'string', example: 'تم حذف العنصر بنجاح'),
+        new OA\Property(property: 'message', type: 'string', example: 'Item deleted successfully.'),
     ]
 )]
 #[OA\Schema(

@@ -16,29 +16,29 @@ class DashboardController extends Controller
 
     #[OA\Get(
         path: '/dashboard',
-        summary: 'رسالة ترحيبية للوحة التحكم',
+        summary: 'Dashboard welcome message',
         security: [['bearerAuth' => []]],
         tags: ['Dashboard'],
         responses: [
-            new OA\Response(response: 200, description: 'admin أو manager فقط', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 200, description: 'admin or manager only', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function index(): JsonResponse
     {
-        return response()->json(['message' => 'لوحة التحكم']);
+        return response()->json(['message' => 'Dashboard']);
     }
 
     #[OA\Get(
         path: '/dashboard/stats',
-        summary: 'إحصائيات لوحة التحكم',
-        description: 'admin فقط. عدد المنتجات، توزيعها حسب التصنيف، منتجات المخزون المنخفض (أقل من 5)، وآخر 10 منتجات.',
+        summary: 'Dashboard statistics',
+        description: 'admin only. Product counts, breakdown by category, low-stock products (below 5), and the latest 10 products.',
         security: [['bearerAuth' => []]],
         tags: ['Dashboard'],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'الإحصائيات',
+                description: 'Statistics',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
@@ -56,7 +56,7 @@ class DashboardController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 403, description: 'صلاحية غير كافية', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 403, description: 'Insufficient permissions', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function stats(): JsonResponse
