@@ -61,21 +61,8 @@ jobs:
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
 
-            echo "--- diagnostics ---"
-            whoami
-            id
-            echo "bootstrap/app.php:"
-            ls -la bootstrap/app.php || true
-            stat -c '%U:%G %a %n' bootstrap/app.php 2>/dev/null || true
-            echo "git status:"
-            git status --short || true
-            if [ -f .git/index.lock ]; then
-              echo "found stale .git/index.lock, removing"
-              rm -f .git/index.lock
-            fi
-            echo "--- end diagnostics ---"
-
             git fetch origin main
+            rm -f .git/index.lock .git/index
             git reset --hard origin/main
             composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
             php artisan migrate --force

@@ -145,6 +145,7 @@ ssh-keygen -t ed25519 -C "github-actions-deploy" -f dur_deploy_key
 
 ```bash
 git fetch origin main
+rm -f .git/index.lock .git/index
 git reset --hard origin/main
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
@@ -153,7 +154,9 @@ php artisan l5-swagger:generate
 php artisan queue:restart
 ```
 
-> ⚠️ **مهم**: `git reset --hard` بيمسح أي تعديل يدوي غير محفوظ (uncommitted) عالسيرفر بدون تحذير. مجلد المشروع بالسيرفر لازم يضل مطابق تماماً للريبو دايماً — أي تعديل مطلوب (حتى لو مستعجل) لازم يصير عبر commit وpush، مش تعديل مباشر بالملفات عالسيرفر. لو ما استخدمنا `reset --hard`، أي drift بسيط (حتى تعديل تجريبي واحد بالغلط) بيوقف كل عمليات النشر التلقائي القادمة بخطأ "local changes would be overwritten by merge".
+> ⚠️ **مهم**: `git reset --hard` بيمسح أي تعديل يدوي غير محفوظ (uncommitted) عالسيرفر بدون تحذير. مجلد المشروع بالسيرفر لازم يضل مطابق تماماً للريبو دايماً — أي تعديل مطلوب (حتى لو مستعجل) لازم يصير عبر commit وpush، مش تعديل مباشر بالملفات عالسيرفر.
+>
+> `rm -f .git/index` قبل الـ reset: كنا صادفين خطأ `error: Entry 'bootstrap/app.php' not uptodate. Cannot merge.` رغم إن الصلاحيات والملكية كانوا سليمين — سببه git index تالف/عالق (stale) عالسيرفر. حذف ملف الـ index وخلي `reset --hard` يعيد بناءه من الصفر بيصلّح هالحالة نهائياً، وهو إجراء آمن (ما بيلمس تاريخ commits ولا محتوى الملفات).
 
 ## 7. التراجع عند وجود مشكلة (Rollback)
 
