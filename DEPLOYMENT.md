@@ -144,13 +144,16 @@ ssh-keygen -t ed25519 -C "github-actions-deploy" -f dur_deploy_key
 بعد إضافة هالأسرار، أي `git push` على `main` رح يشغّل الاختبارات تلقائياً، ولو نجحوا رح يعمل SSH للسيرفر وينفّذ:
 
 ```bash
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 php artisan l5-swagger:generate
 php artisan queue:restart
 ```
+
+> ⚠️ **مهم**: `git reset --hard` بيمسح أي تعديل يدوي غير محفوظ (uncommitted) عالسيرفر بدون تحذير. مجلد المشروع بالسيرفر لازم يضل مطابق تماماً للريبو دايماً — أي تعديل مطلوب (حتى لو مستعجل) لازم يصير عبر commit وpush، مش تعديل مباشر بالملفات عالسيرفر. لو ما استخدمنا `reset --hard`، أي drift بسيط (حتى تعديل تجريبي واحد بالغلط) بيوقف كل عمليات النشر التلقائي القادمة بخطأ "local changes would be overwritten by merge".
 
 ## 7. التراجع عند وجود مشكلة (Rollback)
 
