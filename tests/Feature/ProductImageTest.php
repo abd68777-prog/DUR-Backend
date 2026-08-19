@@ -30,7 +30,9 @@ class ProductImageTest extends TestCase
         $response = $this->actingAs($manager, 'clerk')
             ->postJson('/api/products', [
                 'category_id' => $category->id,
-                'name' => 'خاتم ذهب',
+                'slug' => 'gold-ring',
+                'name_ar' => 'خاتم ذهب',
+                'name_en' => 'Gold Ring',
                 'price' => 500,
                 'images' => [
                     UploadedFile::fake()->image('a.jpg'),

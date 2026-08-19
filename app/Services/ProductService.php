@@ -22,7 +22,10 @@ class ProductService
         }
 
         if (! empty($filters['search'])) {
-            $query->where('name', 'like', '%'.$filters['search'].'%');
+            $query->where(function ($q) use ($filters) {
+                $q->where('name_ar', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('name_en', 'like', '%'.$filters['search'].'%');
+            });
         }
 
         return $query->latest()->paginate($filters['per_page'] ?? 15);

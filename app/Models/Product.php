@@ -13,8 +13,11 @@ class Product extends Model
 
     protected $fillable = [
         'category_id',
-        'name',
-        'description',
+        'slug',
+        'name_ar',
+        'name_en',
+        'description_ar',
+        'description_en',
         'gold_weight',
         'karat',
         'gemstone_type',

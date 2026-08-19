@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CategoryTest extends TestCase
@@ -33,7 +35,7 @@ class CategoryTest extends TestCase
         $customer = User::factory()->create();
 
         $this->actingAs($customer, 'clerk')
-            ->postJson('/api/categories', ['name' => 'خواتم', 'slug' => 'rings'])
+            ->postJson('/api/categories', ['name_ar' => 'خواتم', 'name_en' => 'Rings', 'slug' => 'rings'])
             ->assertForbidden();
     }
 
@@ -42,9 +44,10 @@ class CategoryTest extends TestCase
         $manager = User::factory()->manager()->create();
 
         $this->actingAs($manager, 'clerk')
-            ->postJson('/api/categories', ['name' => 'خواتم', 'slug' => 'rings'])
+            ->postJson('/api/categories', ['name_ar' => 'خواتم', 'name_en' => 'Rings', 'slug' => 'rings'])
             ->assertCreated()
-            ->assertJsonPath('slug', 'rings');
+            ->assertJsonPath('slug', 'rings')
+            ->assertJsonPath('name_en', 'Rings');
     }
 
     public function test_category_slug_must_be_unique(): void
@@ -53,7 +56,7 @@ class CategoryTest extends TestCase
         Category::factory()->create(['slug' => 'rings']);
 
         $this->actingAs($manager, 'clerk')
-            ->postJson('/api/categories', ['name' => 'خواتم أخرى', 'slug' => 'rings'])
+            ->postJson('/api/categories', ['name_ar' => 'خواتم أخرى', 'name_en' => 'Other Rings', 'slug' => 'rings'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['slug']);
     }
@@ -61,12 +64,12 @@ class CategoryTest extends TestCase
     public function test_manager_can_update_category(): void
     {
         $manager = User::factory()->manager()->create();
-        $category = Category::factory()->create(['name' => 'قديم']);
+        $category = Category::factory()->create(['name_ar' => 'قديم']);
 
         $this->actingAs($manager, 'clerk')
-            ->putJson("/api/categories/{$category->id}", ['name' => 'جديد'])
+            ->putJson("/api/categories/{$category->id}", ['name_ar' => 'جديد'])
             ->assertOk()
-            ->assertJsonPath('name', 'جديد');
+            ->assertJsonPath('name_ar', 'جديد');
     }
 
     public function test_updating_category_ignores_its_own_slug_in_uniqueness_check(): void
@@ -112,5 +115,22 @@ class CategoryTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    }
+
+    public function test_manager_can_upload_category_image(): void
+    {
+        Storage::fake('cloudinary');
+        $manager = User::factory()->manager()->create();
+
+        $response = $this->actingAs($manager, 'clerk')
+            ->postJson('/api/categories', [
+                'name_ar' => 'خواتم',
+                'name_en' => 'Rings',
+                'slug' => 'rings',
+                'image' => UploadedFile::fake()->image('category.jpg'),
+            ])
+            ->assertCreated();
+
+        $this->assertNotNull($response->json('image'));
     }
 }

@@ -40,9 +40,11 @@ Backend لمتجر مجوهرات (ذهب ومجوهرات) مبني على Lara
 Category  1 ── * Product  1 ── * ProductImage
 ```
 
-- **Category**: `name`, `slug` (unique), `is_active`
-- **Product**: `category_id`, `name`, `description`, `gold_weight`, `karat` (18/21/24), `gemstone_type`, `gemstone_carat`, `price`, `stock`, `is_active`
-- **ProductImage**: `product_id`, `path` (Cloudinary public_id), `sort_order`, `is_primary` — عندها accessor `url` بيولّد رابط Cloudinary الكامل تلقائياً
+كل الحقول النصية بمنتج/تصنيف ثنائية اللغة (`_ar` / `_en`)، وعندهم `slug` صريح بيبعته الفرونت-إند (required, unique) — مش متولّد تلقائياً بالسيرفر.
+
+- **Category**: `name_ar`, `name_en`, `slug` (unique), `image` (رابط Cloudinary كامل، اختياري)، `is_active`
+- **Product**: `category_id`, `slug` (unique), `name_ar`, `name_en`, `description_ar`, `description_en`, `gold_weight`, `karat` (18/21/22/24 — مُتحقّق منها بالـ validation فقط، مش DB enum)، `gemstone_type`, `gemstone_carat`, `price`, `stock`, `is_active`
+- **ProductImage**: `product_id`, `path` (Cloudinary public_id بالتخزين الداخلي)، `sort_order`, `is_primary` — الـ API بترجع مفتاح `path` بس قيمته رابط Cloudinary الكامل (عبر accessor `url` بالموديل)، مش الـ public_id الخام
 
 حذف Category بيحذف منتجاتها تلقائياً (`cascadeOnDelete`). حذف Product بيحذف صوره من Cloudinary قبل حذف السجل.
 

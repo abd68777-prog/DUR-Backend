@@ -61,7 +61,9 @@ class ProductTest extends TestCase
         $this->actingAs($customer, 'clerk')
             ->postJson('/api/products', [
                 'category_id' => $category->id,
-                'name' => 'خاتم ذهب',
+                'slug' => 'gold-ring',
+                'name_ar' => 'خاتم ذهب',
+                'name_en' => 'Gold Ring',
                 'price' => 500,
             ])
             ->assertForbidden();
@@ -75,14 +77,18 @@ class ProductTest extends TestCase
         $this->actingAs($manager, 'clerk')
             ->postJson('/api/products', [
                 'category_id' => $category->id,
-                'name' => 'خاتم ذهب',
+                'slug' => 'gold-ring',
+                'name_ar' => 'خاتم ذهب',
+                'name_en' => 'Gold Ring',
                 'price' => 500,
-                'karat' => '21',
+                'karat' => '22',
             ])
             ->assertCreated()
-            ->assertJsonPath('name', 'خاتم ذهب');
+            ->assertJsonPath('name_ar', 'خاتم ذهب')
+            ->assertJsonPath('name_en', 'Gold Ring')
+            ->assertJsonPath('karat', '22');
 
-        $this->assertDatabaseHas('products', ['name' => 'خاتم ذهب']);
+        $this->assertDatabaseHas('products', ['slug' => 'gold-ring', 'name_ar' => 'خاتم ذهب']);
     }
 
     public function test_creating_product_requires_valid_data(): void
@@ -92,18 +98,18 @@ class ProductTest extends TestCase
         $this->actingAs($manager, 'clerk')
             ->postJson('/api/products', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['category_id', 'name', 'price']);
+            ->assertJsonValidationErrors(['category_id', 'slug', 'name_ar', 'name_en', 'price']);
     }
 
     public function test_manager_can_update_product(): void
     {
         $manager = User::factory()->manager()->create();
-        $product = Product::factory()->create(['name' => 'قديم']);
+        $product = Product::factory()->create(['name_ar' => 'قديم']);
 
         $this->actingAs($manager, 'clerk')
-            ->putJson("/api/products/{$product->id}", ['name' => 'جديد'])
+            ->putJson("/api/products/{$product->id}", ['name_ar' => 'جديد'])
             ->assertOk()
-            ->assertJsonPath('name', 'جديد');
+            ->assertJsonPath('name_ar', 'جديد');
     }
 
     public function test_manager_can_toggle_product_active_state(): void

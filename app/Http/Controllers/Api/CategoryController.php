@@ -7,11 +7,14 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Services\CategoryService;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 
 class CategoryController extends Controller
 {
+    public function __construct(private CategoryService $categoryService) {}
+
     #[OA\Get(
         path: '/categories',
         summary: 'قائمة التصنيفات',
@@ -53,12 +56,15 @@ class CategoryController extends Controller
     #[OA\Post(
         path: '/categories',
         summary: 'إنشاء تصنيف',
-        description: 'admin أو manager فقط.',
+        description: 'admin أو manager فقط. يدعم رفع صورة واحدة (image).',
         security: [['bearerAuth' => []]],
         tags: ['Categories'],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/CategoryInput')
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(ref: '#/components/schemas/CategoryInput')
+            )
         ),
         responses: [
             new OA\Response(response: 201, description: 'تم إنشاء التصنيف', content: new OA\JsonContent(ref: '#/components/schemas/Category')),
@@ -68,7 +74,10 @@ class CategoryController extends Controller
     )]
     public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $category = Category::create($request->validated());
+        $category = $this->categoryService->create(
+            $request->safe()->except('image'),
+            $request->file('image')
+        );
 
         return response()->json(new CategoryResource($category), 201);
     }
@@ -76,14 +85,17 @@ class CategoryController extends Controller
     #[OA\Put(
         path: '/categories/{category}',
         summary: 'تعديل تصنيف',
-        description: 'admin أو manager فقط.',
+        description: 'admin أو manager فقط. رفع صورة جديدة بيستبدل القديمة.',
         security: [['bearerAuth' => []]],
         tags: ['Categories'],
         parameters: [
             new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         requestBody: new OA\RequestBody(
-            content: new OA\JsonContent(ref: '#/components/schemas/CategoryUpdateInput')
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(ref: '#/components/schemas/CategoryUpdateInput')
+            )
         ),
         responses: [
             new OA\Response(response: 200, description: 'تم تعديل التصنيف', content: new OA\JsonContent(ref: '#/components/schemas/Category')),
@@ -94,7 +106,11 @@ class CategoryController extends Controller
     )]
     public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
-        $category->update($request->validated());
+        $category = $this->categoryService->update(
+            $category,
+            $request->safe()->except('image'),
+            $request->file('image')
+        );
 
         return response()->json(new CategoryResource($category));
     }

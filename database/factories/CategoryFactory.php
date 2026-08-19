@@ -15,8 +15,10 @@ class CategoryFactory extends Factory
         $name = fake()->unique()->words(2, true);
 
         return [
-            'name' => $name,
+            'name_ar' => $name,
+            'name_en' => fake()->unique()->words(2, true),
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 100000),
+            'image' => fake()->imageUrl(),
             'is_active' => true,
         ];
     }
