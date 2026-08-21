@@ -14,9 +14,24 @@ class CategoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_cannot_list_categories(): void
+    public function test_guest_can_list_categories(): void
     {
-        $this->getJson('/api/categories')->assertUnauthorized();
+        // مؤقتاً public بدون تسجيل دخول (راجع routes/api.php للتفاصيل).
+        Category::factory()->count(2)->create();
+
+        $this->getJson('/api/categories')
+            ->assertOk()
+            ->assertJsonCount(2);
+    }
+
+    public function test_guest_can_view_a_category(): void
+    {
+        // مؤقتاً public بدون تسجيل دخول (راجع routes/api.php للتفاصيل).
+        $category = Category::factory()->create();
+
+        $this->getJson("/api/categories/{$category->id}")
+            ->assertOk()
+            ->assertJsonPath('id', $category->id);
     }
 
     public function test_authenticated_user_can_list_categories(): void

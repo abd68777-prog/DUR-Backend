@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Route;
 // أي مستخدم مسجل دخول (أي دور)
 Route::middleware('auth:clerk')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
+
+    // مؤقتاً public (بدون تسجيل دخول) - راجع المجموعة تحت. رجّعهم هون لما نرجع نفعّل الحماية.
+    // Route::get('/products', [ProductController::class, 'index']);
+    // Route::get('/products/{product}', [ProductController::class, 'show']);
+    // Route::get('/categories', [CategoryController::class, 'index']);
+    // Route::get('/categories/{category}', [CategoryController::class, 'show']);
+});
+
+Route::group([], function () {
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{product}', [ProductController::class, 'show']);
     Route::get('/categories', [CategoryController::class, 'index']);

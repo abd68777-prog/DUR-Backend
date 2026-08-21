@@ -12,9 +12,14 @@ class ProductTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_cannot_list_products(): void
+    public function test_guest_can_list_products(): void
     {
-        $this->getJson('/api/products')->assertUnauthorized();
+        // مؤقتاً public بدون تسجيل دخول (راجع routes/api.php للتفاصيل).
+        Product::factory()->count(2)->create();
+
+        $this->getJson('/api/products')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_authenticated_user_can_list_products(): void
@@ -49,6 +54,16 @@ class ProductTest extends TestCase
 
         $this->actingAs($user, 'clerk')
             ->getJson("/api/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('id', $product->id);
+    }
+
+    public function test_guest_can_view_a_product(): void
+    {
+        // مؤقتاً public بدون تسجيل دخول (راجع routes/api.php للتفاصيل).
+        $product = Product::factory()->create();
+
+        $this->getJson("/api/products/{$product->id}")
             ->assertOk()
             ->assertJsonPath('id', $product->id);
     }
