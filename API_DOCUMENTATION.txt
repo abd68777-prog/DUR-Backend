@@ -1,0 +1,255 @@
+================================================================================
+DUR API - Endpoint Reference
+================================================================================
+
+This is a plain-text quick reference for every API endpoint: what it needs to
+be called (auth, parameters, request body) and what it returns. This mirrors
+the interactive Swagger docs at /api/documentation, which also show live
+request/response examples and let you try each endpoint directly.
+
+--------------------------------------------------------------------------------
+GENERAL
+--------------------------------------------------------------------------------
+
+Base URL:        /api
+Authentication:   Bearer token in the Authorization header, e.g.:
+                   Authorization: Bearer <clerk_session_token>
+                  The token comes from Clerk (frontend auth). There is no
+                  separate login endpoint on this API.
+
+Content-Type:     application/json for all endpoints EXCEPT the ones that
+                  accept file uploads (creating/updating products or
+                  categories), which must be sent as multipart/form-data.
+
+Error format (all errors, any endpoint):
+    {
+      "message": "Human-readable message",
+      "errors": { "field_name": ["Reason"] }   // present only on 422 validation errors
+    }
+
+Common status codes across all endpoints:
+    401  Not authenticated (missing/invalid Clerk token)
+    403  Authenticated but role not allowed (see "Auth" per endpoint below)
+    404  Resource not found
+    422  Validation failed (see "errors" object)
+
+Roles: admin, manager, customer (default for every new user).
+Role is stored in OUR database (users.role), NOT in Clerk. Clerk only proves
+identity; it has no concept of role. New users always start as "customer".
+There is no API endpoint to change a role - it must be done on the backend:
+    php artisan user:set-role user@example.com admin
+
+================================================================================
+AUTH
+================================================================================
+
+GET /api/user
+    Auth:     any authenticated user
+    Params:   none
+    Returns:  the current user
+              { id, clerk_id, name, email, role }
+
+================================================================================
+PRODUCTS
+================================================================================
+
+GET /api/products
+    Auth:     any authenticated user
+    Query params (all optional):
+        category_id   integer
+        is_active     boolean
+        search        string   - matches against name_ar OR name_en
+        per_page      integer  - default 15
+    Returns:  paginated list
+              { data: Product[], links: {...}, meta: {...} }
+
+--------------------------------------------------------------------------------
+
+GET /api/products/{product}
+    Auth:     any authenticated user
+    Path:     product = product id (integer)
+    Returns:  a single Product
+
+--------------------------------------------------------------------------------
+
+POST /api/products
+    Auth:     admin or manager
+    Body:     multipart/form-data
+        category_id       required  integer, must exist in categories
+        slug              required  string, max 255, unique across products
+        name_ar           required  string, max 255
+        name_en           required  string, max 255
+        description_ar    optional  string
+        description_en    optional  string
+        gold_weight       optional  numeric, >= 0
+        karat             optional  one of: 18, 21, 22, 24
+        gemstone_type     optional  string, max 255
+        gemstone_carat    optional  numeric, >= 0
+        price             required  numeric, >= 0
+        stock             optional  integer, >= 0
+        is_active         optional  boolean
+        images[]          optional  array of image files, max 4MB each
+    Returns:  201 + the created Product (with images/category loaded)
+
+--------------------------------------------------------------------------------
+
+PUT /api/products/{product}
+    Auth:     admin or manager
+    Path:     product = product id (integer)
+    Body:     multipart/form-data - same fields as POST above, but all optional
+              (only send the fields you want to change)
+    Note:     any images[] sent here are ADDED to the product's existing
+              images - they do NOT replace them. Use the delete-image endpoint
+              below to remove one first if needed.
+    Returns:  200 + the updated Product
+
+--------------------------------------------------------------------------------
+
+PATCH /api/products/{product}/toggle-active
+    Auth:     admin or manager
+    Path:     product = product id (integer)
+    Body:     none
+    Effect:   flips is_active (true <-> false)
+    Returns:  200 + the updated Product
+
+--------------------------------------------------------------------------------
+
+DELETE /api/products/{product}
+    Auth:     admin only
+    Path:     product = product id (integer)
+    Effect:   deletes the product AND all its images from Cloudinary
+    Returns:  200 + { message }
+
+--------------------------------------------------------------------------------
+
+DELETE /api/products/{product}/images/{image}
+    Auth:     admin or manager
+    Path:     product = product id (integer)
+              image   = product_image id (integer)
+    Effect:   deletes one image. If it was the primary image (is_primary),
+              the next remaining image (by sort_order) automatically becomes
+              primary.
+    Returns:  200 + { message }
+
+--------------------------------------------------------------------------------
+Product object shape:
+{
+  "id": 1,
+  "slug": "gold-ring-21k",
+  "category_id": 1,
+  "category": { ...Category object, see below... },
+  "name_ar": "...",
+  "name_en": "...",
+  "description_ar": "..." | null,
+  "description_en": "..." | null,
+  "gold_weight": 5.5 | null,
+  "karat": "18" | "21" | "22" | "24" | null,
+  "gemstone_type": "..." | null,
+  "gemstone_carat": 0.5 | null,
+  "price": 500.75,
+  "stock": 10,
+  "is_active": true,
+  "images": [ { "id": 1, "path": "<full cloudinary url>", "sort_order": 0, "is_primary": true }, ... ],
+  "created_at": "2026-01-01T12:00:00+00:00",
+  "updated_at": "2026-01-01T12:00:00+00:00"
+}
+Note: "images[].path" is the full, ready-to-use Cloudinary image URL - not a
+relative path. Use it directly as an <img src>.
+
+================================================================================
+CATEGORIES
+================================================================================
+
+GET /api/categories
+    Auth:     any authenticated user
+    Params:   none
+    Returns:  array of ALL categories (no pagination)
+
+--------------------------------------------------------------------------------
+
+GET /api/categories/{category}
+    Auth:     any authenticated user
+    Path:     category = category id (integer)
+    Returns:  a single Category
+
+--------------------------------------------------------------------------------
+
+POST /api/categories
+    Auth:     admin or manager
+    Body:     multipart/form-data
+        name_ar    required  string, max 255
+        name_en    required  string, max 255
+        slug       required  string, max 255, unique across categories
+        image      optional  single image file, max 4MB
+        is_active  optional  boolean
+    Returns:  201 + the created Category
+
+--------------------------------------------------------------------------------
+
+PUT /api/categories/{category}
+    Auth:     admin or manager
+    Path:     category = category id (integer)
+    Body:     multipart/form-data - same fields as POST above, but all optional
+    Note:     uploading a new "image" REPLACES the old one (unlike products,
+              a category only has one image).
+    Returns:  200 + the updated Category
+
+--------------------------------------------------------------------------------
+
+DELETE /api/categories/{category}
+    Auth:     admin only
+    Path:     category = category id (integer)
+    Effect:   also deletes every product that belongs to this category
+              (cascade)
+    Returns:  200 + { message }
+
+--------------------------------------------------------------------------------
+Category object shape:
+{
+  "id": 1,
+  "image": "<full cloudinary url>" | null,
+  "name_ar": "...",
+  "name_en": "...",
+  "slug": "rings",
+  "is_active": true,
+  "products_count": 12   // only present from GET /api/dashboard/stats, null elsewhere
+}
+
+================================================================================
+DASHBOARD
+================================================================================
+
+GET /api/dashboard
+    Auth:     admin or manager
+    Returns:  { "message": "Dashboard" }
+
+--------------------------------------------------------------------------------
+
+GET /api/dashboard/stats
+    Auth:     admin only
+    Returns:
+    {
+      "products_count": { "total": 42, "active": 35, "inactive": 7 },
+      "products_by_category": [ ...Category[], each with products_count... ],
+      "low_stock_products": [ ...Product[] with stock < 5, lowest stock first... ],
+      "latest_products": [ ...Product[], most recently created, up to 10... ]
+    }
+
+================================================================================
+WEBHOOKS (not used by the frontend)
+================================================================================
+
+POST /api/webhooks/clerk
+    Auth:     none - instead protected by a Svix signature check
+    Called by: Clerk only (configured in the Clerk dashboard), never by the
+              frontend directly
+    Required headers: svix-id, svix-timestamp, svix-signature
+    Body:     raw Clerk event payload (JSON)
+    Effect:   on a "user.created" event, creates the matching local user
+              record (role defaults to "customer")
+    Returns:  200 + { message }  on success
+              400 + { message }  if the signature is invalid
+
+================================================================================
+END
+================================================================================
