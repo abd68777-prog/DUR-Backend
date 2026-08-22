@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Repositories\ClerkUserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class ClerkWebhookController extends Controller
     #[OA\Post(
         path: '/webhooks/clerk',
         summary: 'Clerk webhook (not called by the frontend)',
-        description: 'Internal endpoint called only by Clerk, protected by a Svix signature (svix-id/svix-timestamp/svix-signature headers). Handles the user.created event to create the user in the database.',
+        description: 'Internal endpoint called only by Clerk, protected by a Svix signature (svix-id/svix-timestamp/svix-signature headers). Handles user.created, user.updated and user.deleted to keep the local users table in sync with Clerk. All three events must be enabled in the Clerk Dashboard.',
         tags: ['Webhooks'],
         responses: [
             new OA\Response(response: 200, description: 'Processed', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
@@ -46,11 +47,18 @@ class ClerkWebhookController extends Controller
         $eventData = is_string($verified) ? json_decode($verified, true) : (array) $verified;
 
         $eventType = $eventData['type'] ?? null;
-        $data = $eventData['data'] ?? null;
+        $data = $eventData['data'] ?? [];
 
-        if ($eventType === 'user.created') {
-            $this->handleUserCreated($data);
+        if (! is_array($data)) {
+            $data = (array) $data;
         }
+
+        match ($eventType) {
+            'user.created' => $this->handleUserCreated($data),
+            'user.updated' => $this->handleUserUpdated($data),
+            'user.deleted' => $this->handleUserDeleted($data),
+            default => null,
+        };
 
         return response()->json(['message' => 'ok']);
     }
@@ -77,5 +85,73 @@ class ClerkWebhookController extends Controller
         );
 
         Log::info('User created via Clerk webhook', ['clerk_id' => $clerkId]);
+    }
+
+    /**
+     * تغيير الإيميل أو الاسم بـ Clerk لازم ينعكس عنا، وإلا `user:set-role`
+     * بالإيميل الجديد ما بيلاقي المستخدم.
+     */
+    private function handleUserUpdated(array $data): void
+    {
+        $clerkId = $data['id'] ?? null;
+
+        if (blank($clerkId)) {
+            Log::warning('Clerk webhook user.updated without an id', ['data' => $data]);
+
+            return;
+        }
+
+        $user = User::where('clerk_id', $clerkId)->first();
+
+        if (! $user) {
+            // ما منعرفه - منعامله كإنشاء جديد بدل ما نتجاهل الحدث.
+            $this->handleUserCreated($data);
+
+            return;
+        }
+
+        $firstName = $data['first_name'] ?? '';
+        $lastName = $data['last_name'] ?? '';
+        $email = $data['email_addresses'][0]['email_address'] ?? null;
+
+        // منتجاهل التحديث إذا الإيميل الجديد محجوز لمستخدم تاني، بدل ما نكسر
+        // قيد users_email_unique ونرجّع 500 لـ Clerk (وبيعيد المحاولة للأبد).
+        if (filled($email) && User::where('email', $email)->whereKeyNot($user->id)->exists()) {
+            Log::warning('Clerk webhook user.updated email already taken', [
+                'clerk_id' => $clerkId,
+            ]);
+
+            $email = null;
+        }
+
+        $user->update(array_filter([
+            'name' => trim("{$firstName} {$lastName}") ?: null,
+            'email' => $email,
+        ]));
+
+        Log::info('User updated via Clerk webhook', ['clerk_id' => $clerkId]);
+    }
+
+    /**
+     * بدون هالمعالجة بيضل صف المستخدم بالـ DB بعد حذفه من Clerk. وبيصير مشكلة
+     * فعلية لما ينعمل حساب جديد بنفس الإيميل: بيجي بـ clerk_id جديد فما بينلاقى،
+     * والإدخال بيكسر قيد users_email_unique.
+     */
+    private function handleUserDeleted(array $data): void
+    {
+        $clerkId = $data['id'] ?? null;
+
+        if (blank($clerkId)) {
+            Log::warning('Clerk webhook user.deleted without an id', ['data' => $data]);
+
+            return;
+        }
+
+        $deleted = User::where('clerk_id', $clerkId)->delete();
+
+        Log::info('User deleted via Clerk webhook', [
+            'clerk_id' => $clerkId,
+            'deleted' => $deleted,
+        ]);
     }
 }

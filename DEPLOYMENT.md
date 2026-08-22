@@ -60,6 +60,22 @@ php artisan l5-swagger:generate
 
 `clerk.pem` (ملف JWT public key) لازم يترفع يدوياً لمجلد المشروع بالسيرفر — مش موجود بالـ git (متجاهل عن قصد لأنه حساس).
 
+### الأحداث المطلوب تفعيلها بلوحة Clerk
+
+بلوحة Clerk → **Configure → Webhooks** → الـ endpoint لازم يشير لـ `https://<api-domain>/api/webhooks/clerk`، ولازم تكون **الأحداث التلاتة** مفعّلة:
+
+| الحدث | ليش ضروري |
+|---|---|
+| `user.created` | بينشئ المستخدم بالـ DB عند التسجيل |
+| `user.updated` | بيزامن الاسم/الإيميل — بدونه `user:set-role` بالإيميل الجديد ما بيلاقي المستخدم |
+| `user.deleted` | **بيحذف الصف من الـ DB.** بدونه بيضل صف يتيم، ولما ينعمل حساب جديد بنفس الإيميل بيصير تضارب `users_email_unique` |
+
+لتنظيف صفوف يتيمة من قبل ما ينضاف `user.deleted` (بينحذف كل من ما إله حساب بـ Clerk — تأكد من القائمة أول):
+
+```bash
+php artisan tinker --execute="App\Models\User::where('email','LIKE','%@example.com')->get(['id','email','clerk_id'])"
+```
+
 ## 4. Nginx (مثال)
 
 ```nginx

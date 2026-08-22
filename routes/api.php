@@ -32,7 +32,9 @@ Route::middleware(['auth:clerk', 'role:admin,manager'])->group(function () {
 
 // Admin بس
 Route::middleware(['auth:clerk', 'role:admin'])->group(function () {
-    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    // معلّق: UserController لسه ما انعمل، فتفعيله بيرجّع 500.
+    // حذف المستخدم من Clerk بينعكس تلقائياً عالـ DB عبر webhook تبع user.deleted.
+    // Route::delete('/users/{id}', [UserController::class, 'destroy']);
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 });
 Route::post('/webhooks/clerk', [ApiClerkWebhookController::class, 'handle']);
