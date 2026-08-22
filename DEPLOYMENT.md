@@ -171,3 +171,30 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache
 php artisan l5-swagger:generate
 php artisan queue:restart
 ```
+## 8. تشخيص الأعطال (`clerk:doctor`)
+
+أي طلب على endpoint محمي (متل `GET /api/user`) بيرجع **500** بدل 401 معناها في إعداد ناقص عالسيرفر، مش مشكلة بالكود. شغّل:
+
+```bash
+cd /var/www/dur-backend
+php artisan clerk:doctor --log
+```
+
+بيفحص ويطبع `[ OK ]` / `[WARN]` / `[FAIL]` لكل واحد من هدول — **بدون ما يطبع ولا قيمة سرية**:
+
+| الفحص | ليش بيوقع الطلب على 500 |
+|---|---|
+| `CLERK_ALLOWED_ISSUER` / `CLERK_SECRET_KEY` | فاضيين ⇒ `ClerkGuard` بيرمي `EmptyConfigException` قبل ما يوصل للـ controller |
+| وجود ملف `clerk.pem` | الملف متجاهل بالـ git عن قصد فما بينرفع مع الـ deploy. إذا ناقص ⇒ استثناء عند قراءة المفتاح |
+| تحميل مفتاح التوقيع | ملف موجود بس تالف/صيغته غلط |
+| `CLERK_ALLOWED_ORIGINS` | مش سبب 500، بس إذا ما بيطابق دومين الفرونت ⇒ كل طلب بيرجع 401 |
+| `APP_LOCALE` | لو مش `en` وما في `lang/{locale}` ⇒ رسائل الأخطاء بترجع كمفاتيح خام متل `validation.boolean` |
+| أعمدة `role` / `clerk_id` / `password` nullable | migration ناقص ⇒ خطأ SQL عند إنشاء المستخدم |
+
+نفس الفحص بينطبع تلقائياً بآخر كل عملية نشر تحت مجموعة **"Clerk diagnostics"** بسجل GitHub Actions، وما بيوقف النشر أبداً.
+
+بعد أي تعديل على `.env` لازم:
+
+```bash
+php artisan config:cache
+```

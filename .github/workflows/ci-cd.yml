@@ -71,3 +71,9 @@ jobs:
             php artisan view:cache
             php artisan l5-swagger:generate
             php artisan queue:restart
+
+            # تشخيص: بيطبع إذا إعدادات Clerk/البيئة عالسيرفر ناقصة.
+            # ما بيوقف النشر، وما بيطبع ولا قيمة سرية.
+            echo "::group::Clerk diagnostics"
+            php artisan clerk:doctor --log || true
+            echo "::endgroup::"
