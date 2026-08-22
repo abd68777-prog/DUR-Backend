@@ -109,6 +109,30 @@ class ClerkDoctor extends Command
         $this->assert('CORS_ALLOWED_ORIGINS is set', filled($corsOrigins));
         $this->line('       cors:  '.($corsOrigins ? implode(', ', $corsOrigins) : '(empty)'));
 
+        // القائمتين لازم يتطابقوا. origin موجود بالـ CORS بس ناقص بـ Clerk بيمرق
+        // من المتصفح وبعدين Clerk بيرفض التوكن => 401 على كل طلب مصادَق من
+        // هالدومين، بدون ولا رسالة بتشير لسبب المشكلة.
+        $missingFromClerk = array_diff($corsOrigins, $clerkOrigins);
+
+        $this->assert(
+            'every CORS origin is allowed by Clerk too',
+            empty($missingFromClerk),
+            'missing from CLERK_ALLOWED_ORIGINS: '.implode(', ', $missingFromClerk)
+                .' => tokens sent from there are rejected (401)',
+            warnOnly: true
+        );
+
+        // العكس: المتصفح بيوقف الطلب قبل ما يوصل أصلاً.
+        $missingFromCors = array_diff($clerkOrigins, $corsOrigins);
+
+        $this->assert(
+            'every Clerk origin is allowed by CORS too',
+            empty($missingFromCors),
+            'missing from CORS_ALLOWED_ORIGINS: '.implode(', ', $missingFromCors)
+                .' => the browser blocks the request before it is sent',
+            warnOnly: true
+        );
+
         if (app()->environment('production')) {
             $localhost = array_filter(
                 array_merge($clerkOrigins, $corsOrigins),

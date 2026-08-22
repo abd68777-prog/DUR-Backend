@@ -19,7 +19,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173'))),
+    // trim ضروري: مسافة وحدة بعد الفاصلة بالـ .env بتخلي "http://x, http://y"
+    // ينفصل لـ [" http://y"] وما بيطابق أي origin - وبتصير المشكلة صامتة تماماً.
+    'allowed_origins' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173'))
+    ))),
 
     'allowed_origins_patterns' => [],
 

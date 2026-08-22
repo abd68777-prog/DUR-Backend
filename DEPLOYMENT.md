@@ -187,7 +187,7 @@ php artisan clerk:doctor --log
 | `CLERK_ALLOWED_ISSUER` / `CLERK_SECRET_KEY` | فاضيين ⇒ `ClerkGuard` بيرمي `EmptyConfigException` قبل ما يوصل للـ controller |
 | وجود ملف `clerk.pem` | الملف متجاهل بالـ git عن قصد فما بينرفع مع الـ deploy. إذا ناقص ⇒ استثناء عند قراءة المفتاح |
 | تحميل مفتاح التوقيع | ملف موجود بس تالف/صيغته غلط |
-| `CLERK_ALLOWED_ORIGINS` | مش سبب 500، بس إذا ما بيطابق دومين الفرونت ⇒ كل طلب بيرجع 401 |
+| تطابق `CLERK_ALLOWED_ORIGINS` مع `CORS_ALLOWED_ORIGINS` | **أكتر خطأ متكرر.** دومين موجود بالـ CORS بس ناقص بـ Clerk ⇒ المتصفح بيسمح بالطلب، وClerk بيرفض التوكن ⇒ كل طلب مصادَق من هالدومين بيفشل. لازم القائمتين يحتووا نفس الدومينات |
 | `APP_LOCALE` | لو مش `en` وما في `lang/{locale}` ⇒ رسائل الأخطاء بترجع كمفاتيح خام متل `validation.boolean` |
 | أعمدة `role` / `clerk_id` / `password` nullable | migration ناقص ⇒ خطأ SQL عند إنشاء المستخدم |
 

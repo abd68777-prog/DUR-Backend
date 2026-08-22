@@ -16,7 +16,12 @@ return [
     |--------------------------------------------------------------------------
     | Your client app origins, are highly recommended to set when using Web client applications.
     */
-    'allowed_origins' => explode(',', env('CLERK_ALLOWED_ORIGINS', '')),
+    // trim ضروري: مسافة وحدة بعد الفاصلة بتخلي الـ origin ما يطابق claim الـ azp
+    // بالتوكن، فكل طلب من هالدومين بيرجع 401 بدون سبب واضح.
+    'allowed_origins' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('CLERK_ALLOWED_ORIGINS', ''))
+    ))),
 
     /*
     |--------------------------------------------------------------------------
