@@ -23,6 +23,17 @@ class UpdateCategoryRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        // multipart/form-data (لازم لرفع الصورة) بيبعت كل شي كـ string، فـ "true"/"false"
+        // ما بتعديها قاعدة boolean الافتراضية (بتقبل بس true/false/0/1/"0"/"1").
+        if ($this->has('is_active')) {
+            $this->merge([
+                'is_active' => filter_var($this->input('is_active'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [

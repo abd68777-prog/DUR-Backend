@@ -148,4 +148,23 @@ class CategoryTest extends TestCase
 
         $this->assertNotNull($response->json('image'));
     }
+
+    public function test_string_is_active_from_multipart_form_data_is_accepted(): void
+    {
+        // الفرونت-إند بيبعت multipart/form-data (لازم لرفع الصورة)، ويلي بيخلي is_active
+        // توصل كـ string "true"/"false" مش boolean حقيقي.
+        Storage::fake('cloudinary');
+        $manager = User::factory()->manager()->create();
+
+        $this->actingAs($manager, 'clerk')
+            ->post('/api/categories', [
+                'name_ar' => 'خواتم',
+                'name_en' => 'Rings',
+                'slug' => 'rings',
+                'is_active' => 'false',
+                'image' => UploadedFile::fake()->image('category.jpg'),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('is_active', false);
+    }
 }

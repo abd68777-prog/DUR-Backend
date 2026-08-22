@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProductTest extends TestCase
@@ -102,6 +104,28 @@ class ProductTest extends TestCase
             ->assertJsonPath('name_ar', 'خاتم ذهب')
             ->assertJsonPath('name_en', 'Gold Ring')
             ->assertJsonPath('karat', '22');
+    }
+
+    public function test_string_is_active_from_multipart_form_data_is_accepted(): void
+    {
+        // الفرونت-إند بيبعت multipart/form-data (لازم لرفع الصور)، ويلي بيخلي is_active
+        // توصل كـ string "true"/"false" مش boolean حقيقي.
+        Storage::fake('cloudinary');
+        $manager = User::factory()->manager()->create();
+        $category = Category::factory()->create();
+
+        $this->actingAs($manager, 'clerk')
+            ->post('/api/products', [
+                'category_id' => $category->id,
+                'slug' => 'gold-ring',
+                'name_ar' => 'خاتم ذهب',
+                'name_en' => 'Gold Ring',
+                'price' => 500,
+                'is_active' => 'false',
+                'images' => [UploadedFile::fake()->image('a.jpg')],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('is_active', false);
 
         $this->assertDatabaseHas('products', ['slug' => 'gold-ring', 'name_ar' => 'خاتم ذهب']);
     }
