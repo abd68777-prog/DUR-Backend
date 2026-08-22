@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Repositories\ClerkUserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -58,20 +58,22 @@ class ClerkWebhookController extends Controller
     private function handleUserCreated(array $data): void
     {
         $clerkId = $data['id'] ?? null;
-        $email = $data['email_addresses'][0]['email_address'] ?? null;
+
+        if (blank($clerkId)) {
+            Log::warning('Clerk webhook user.created without an id', ['data' => $data]);
+
+            return;
+        }
+
         $firstName = $data['first_name'] ?? '';
         $lastName = $data['last_name'] ?? '';
 
-        User::firstOrCreate(
-            ['clerk_id' => $clerkId],
-            [
-                'name' => trim("{$firstName} {$lastName}") ?: 'Clerk User',
-                'email' => $email ?? "{$clerkId}@placeholder.clerk",
-                // المصادقة عبر Clerk، فما منحتاج كلمة سر. العمود صار nullable
-                // (migration: make_password_nullable_on_users_table).
-                // 'password' => bcrypt(str()->random(32)),
-                'role' => 'customer',
-            ]
+        // نفس منطق تسجيل الدخول بالتوكن - بيتبنّى الصف الموجود بنفس الإيميل بدل
+        // ما يكسر قيد users_email_unique. المصادقة عبر Clerk فما في كلمة سر.
+        app(ClerkUserRepository::class)->resolve(
+            clerkId: $clerkId,
+            email: $data['email_addresses'][0]['email_address'] ?? null,
+            name: trim("{$firstName} {$lastName}"),
         );
 
         Log::info('User created via Clerk webhook', ['clerk_id' => $clerkId]);

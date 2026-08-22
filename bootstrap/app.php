@@ -20,15 +20,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
+
+        // Laravel بيحط افتراضياً `fn () => route('login')` هون، وبيستدعيها جوّا
+        // Authenticate middleware لأي طلب ما بيطلب JSON صراحةً (يعني fetch بدون
+        // هيدر Accept: application/json). ما في route اسمه login بهالمشروع -
+        // Clerk بيتولى المصادقة - فكانت ترمي RouteNotFoundException وترجع 500
+        // بدل 401، قبل ما يشتغل معالج الأخطاء أصلاً.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*'));
 
+        // بدون شرط api/* عن قصد: ما في تسجيل دخول ويب بهالمشروع (Clerk بيتولى
+        // المصادقة كلها)، فأي طلب غير مصادَق برّا api/* كان بينتهي عند Laravel
+        // بـ redirect لـ route('login') المفقود => RouteNotFoundException و500
+        // بدل 401.
         $exceptions->render(function (AuthenticationException $e, Request $request) {
-            if (! $request->is('api/*')) {
-                return null;
-            }
-
             return response()->json(['message' => 'You must be logged in to access this resource.'], 401);
         });
 

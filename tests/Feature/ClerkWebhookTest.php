@@ -129,6 +129,28 @@ class ClerkWebhookTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
+    public function test_webhook_adopts_an_existing_user_with_the_same_email(): void
+    {
+        // نفس الإيميل بـ clerk_id قديم - لازم يربط الحساب مش يرمي خطأ unique.
+        $existing = User::factory()->create([
+            'clerk_id' => 'user_old',
+            'email' => 'newuser@example.com',
+        ]);
+
+        $payload = $this->userCreatedPayload('user_123', 'newuser@example.com');
+        $headers = $this->signedHeaders($payload);
+
+        $this->call(
+            'POST',
+            '/api/webhooks/clerk',
+            server: $this->toServerHeaders($headers),
+            content: $payload
+        )->assertOk();
+
+        $this->assertDatabaseCount('users', 1);
+        $this->assertSame('user_123', $existing->fresh()->clerk_id);
+    }
+
     public function test_webhook_ignores_unhandled_event_types(): void
     {
         $payload = json_encode(['type' => 'user.updated', 'data' => ['id' => 'user_999']]);
