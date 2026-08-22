@@ -96,6 +96,22 @@ class ClerkWebhookTest extends TestCase
         ]);
     }
 
+    public function test_webhook_creates_user_without_a_password(): void
+    {
+        // المصادقة عبر Clerk، فعمود password صار nullable وما منعبّيه.
+        $payload = $this->userCreatedPayload('user_456', 'nopassword@example.com');
+        $headers = $this->signedHeaders($payload);
+
+        $this->call(
+            'POST',
+            '/api/webhooks/clerk',
+            server: $this->toServerHeaders($headers),
+            content: $payload
+        )->assertOk();
+
+        $this->assertNull(User::where('clerk_id', 'user_456')->sole()->password);
+    }
+
     public function test_webhook_does_not_duplicate_existing_user(): void
     {
         User::factory()->create(['clerk_id' => 'user_123']);

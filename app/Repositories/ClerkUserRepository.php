@@ -22,7 +22,9 @@ class ClerkUserRepository implements UserRepositoryContract
             [
                 'name' => trim("{$firstName} {$lastName}") ?: 'Clerk User',
                 'email' => $email ?? "{$clerkId}@placeholder.clerk",
-                'password' => bcrypt(str()->random(32)), // in case the password column is NOT NULL
+                // المصادقة عبر Clerk، فما منحتاج كلمة سر. العمود صار nullable
+                // (migration: make_password_nullable_on_users_table).
+                // 'password' => bcrypt(str()->random(32)),
                 'role' => 'customer',
             ]
         );

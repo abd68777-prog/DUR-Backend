@@ -21,6 +21,8 @@ class User extends Authenticatable
         'clerk_id',
         'name',
         'email',
+        // المصادقة عبر Clerk فما منستخدم كلمة سر أبداً. خليّنا العمود (nullable)
+        // والإعدادات تحت جاهزين لو رجعنا مستقبلاً لمصادقة Laravel القياسية.
         'password',
         'role',
     ];
