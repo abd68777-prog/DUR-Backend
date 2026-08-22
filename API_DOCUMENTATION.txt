@@ -245,9 +245,25 @@ POST /api/webhooks/clerk
               frontend directly
     Required headers: svix-id, svix-timestamp, svix-signature
     Body:     raw Clerk event payload (JSON)
-    Effect:   on a "user.created" event, creates the matching local user
-              record (role defaults to "customer")
-    Returns:  200 + { message }  on success
+    Effect:   keeps the local users table in sync with Clerk. Three event
+              types are handled; all three must stay subscribed in the
+              Clerk dashboard:
+
+                user.created  creates the local user (role: "customer").
+                              If a row already uses that email, it is
+                              linked to the new Clerk account instead,
+                              keeping its existing role.
+
+                user.updated  syncs name and email. An email already owned
+                              by another row is skipped (name still syncs).
+                              If the user is unknown, it is created.
+
+                user.deleted  deletes the local row. Required: without it
+                              the row outlives the Clerk account and blocks
+                              anyone from signing up with that email again.
+
+              Any other event type is accepted and ignored.
+    Returns:  200 + { message }  on success, and for ignored event types
               400 + { message }  if the signature is invalid
 
 ================================================================================
