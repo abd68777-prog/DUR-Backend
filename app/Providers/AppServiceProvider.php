@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Repositories\ClerkUserRepository;
+use App\Services\PricingService;
 use App\Services\PromotionService;
 use Illuminate\Support\ServiceProvider;
 use RonasIT\Clerk\Contracts\UserRepositoryContract;
@@ -16,6 +17,7 @@ class AppServiceProvider extends ServiceProvider
         // كل منتج بياخد نسخة جديدة وبيعيد الاستعلام - N+1 على طول.
         // scoped بدل singleton حتى الكاش ينمسح بين الطلبات لو انتقلنا لـ Octane.
         $this->app->scoped(PromotionService::class);
+        $this->app->scoped(PricingService::class);
     }
 
     public function boot(): void

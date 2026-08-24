@@ -20,6 +20,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'gemstone_type', type: 'string', maxLength: 255, nullable: true),
         new OA\Property(property: 'gemstone_carat', type: 'number', format: 'float', nullable: true, minimum: 0),
         new OA\Property(property: 'price', type: 'number', format: 'float', minimum: 0),
+        new OA\Property(property: 'has_discount', type: 'boolean', nullable: true, description: 'Switch the manual discount on or off. Turning it on needs discount_value, unless the product already has one stored.'),
+        new OA\Property(property: 'discount_value', type: 'number', format: 'float', nullable: true, minimum: 0.01, maximum: 100, example: 20, description: 'Discount percentage, 0.01 to 100'),
         new OA\Property(property: 'stock', type: 'integer', nullable: true, minimum: 0),
         new OA\Property(
             property: 'images',
@@ -36,11 +38,30 @@ class UpdateProductRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        // multipart بيبعت كل شي كـ string، فـ "true"/"false" ما بتعديها
+        // قاعدة boolean الافتراضية.
+        if ($this->has('has_discount')) {
+            $this->merge([
+                'has_discount' => filter_var($this->input('has_discount'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
+        $product = $this->route('product');
+
+        // النسبة إلزامية بس لما نفعّل الخصم وما في قيمة محفوظة من قبل - حتى
+        // الإدارة تقدر ترجّع تشغّل خصم قديم بإرسال has_discount لحاله.
+        $turningOnWithoutStoredValue = $this->has('has_discount')
+            && $this->boolean('has_discount')
+            && $product?->discount_value === null;
+
         return [
             'category_id' => ['sometimes', 'exists:categories,id'],
-            'slug' => ['sometimes', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($this->route('product'))],
+            'slug' => ['sometimes', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($product)],
             'name_ar' => ['sometimes', 'string', 'max:255'],
             'name_en' => ['sometimes', 'string', 'max:255'],
             'description_ar' => ['nullable', 'string'],
@@ -50,9 +71,22 @@ class UpdateProductRequest extends FormRequest
             'gemstone_type' => ['nullable', 'string', 'max:255'],
             'gemstone_carat' => ['nullable', 'numeric', 'min:0'],
             'price' => ['sometimes', 'numeric', 'min:0'],
+            'has_discount' => ['sometimes', 'boolean'],
+            'discount_value' => [
+                'nullable',
+                Rule::requiredIf($turningOnWithoutStoredValue),
+                'numeric', 'min:0.01', 'max:100',
+            ],
             'stock' => ['nullable', 'integer', 'min:0'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:4096'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'discount_value.required' => 'Enter the discount percentage when switching the discount on.',
         ];
     }
 }

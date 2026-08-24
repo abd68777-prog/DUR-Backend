@@ -20,6 +20,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'gemstone_type', type: 'string', maxLength: 255, nullable: true),
         new OA\Property(property: 'gemstone_carat', type: 'number', format: 'float', nullable: true, minimum: 0),
         new OA\Property(property: 'price', type: 'number', format: 'float', minimum: 0, example: 500.75),
+        new OA\Property(property: 'has_discount', type: 'boolean', nullable: true, example: false, description: 'Switch the manual discount on. discount_value becomes required.'),
+        new OA\Property(property: 'discount_value', type: 'number', format: 'float', nullable: true, minimum: 0.01, maximum: 100, example: 20, description: 'Discount percentage, 0.01 to 100'),
         new OA\Property(property: 'stock', type: 'integer', nullable: true, minimum: 0, example: 10),
         new OA\Property(property: 'is_active', type: 'boolean', nullable: true, example: true),
         new OA\Property(
@@ -41,10 +43,12 @@ class StoreProductRequest extends FormRequest
     {
         // multipart/form-data (لازم لرفع الصور) بيبعت كل شي كـ string، فـ "true"/"false"
         // ما بتعديها قاعدة boolean الافتراضية (بتقبل بس true/false/0/1/"0"/"1").
-        if ($this->has('is_active')) {
-            $this->merge([
-                'is_active' => filter_var($this->input('is_active'), FILTER_VALIDATE_BOOLEAN),
-            ]);
+        foreach (['is_active', 'has_discount'] as $flag) {
+            if ($this->has($flag)) {
+                $this->merge([
+                    $flag => filter_var($this->input($flag), FILTER_VALIDATE_BOOLEAN),
+                ]);
+            }
         }
     }
 
@@ -62,10 +66,20 @@ class StoreProductRequest extends FormRequest
             'gemstone_type' => ['nullable', 'string', 'max:255'],
             'gemstone_carat' => ['nullable', 'numeric', 'min:0'],
             'price' => ['required', 'numeric', 'min:0'],
+            'has_discount' => ['nullable', 'boolean'],
+            // النسبة إلزامية لما الخصم مفعّل، وإلا بيصير عنا "عليه خصم" بلا قيمة.
+            'discount_value' => ['nullable', 'required_if_accepted:has_discount', 'numeric', 'min:0.01', 'max:100'],
             'stock' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:4096'], // 4MB لكل صورة
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'discount_value.required_if_accepted' => 'Enter the discount percentage when the discount is switched on.',
         ];
     }
 }

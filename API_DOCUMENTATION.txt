@@ -33,6 +33,12 @@ Common status codes across all endpoints:
     404  Resource not found
     422  Validation failed (see "errors" object)
 
+How an order happens right now: there is no cart or checkout in this API.
+The customer sends a product link to management over WhatsApp, and
+management sets a discount on that product through
+PUT /api/products/{product}. The promotions section further down is built
+for a later version and is not part of that flow.
+
 Roles: admin, manager, customer (default for every new user).
 Role is stored in OUR database (users.role), NOT in Clerk. Clerk only proves
 identity; it has no concept of role. New users always start as "customer".
@@ -89,6 +95,10 @@ POST /api/products
         gemstone_type     optional  string, max 255
         gemstone_carat    optional  numeric, >= 0
         price             required  numeric, >= 0
+        has_discount      optional  boolean, defaults false. Switches the
+                                    manual discount on.
+        discount_value    required when has_discount is true
+                                    numeric percentage, 0.01 - 100
         stock             optional  integer, >= 0
         is_active         optional  boolean
         images[]          optional  array of image files, max 4MB each
@@ -104,6 +114,11 @@ PUT /api/products/{product}
     Note:     any images[] sent here are ADDED to the product's existing
               images - they do NOT replace them. Use the delete-image endpoint
               below to remove one first if needed.
+    Note:     this is how a discount gets applied in the current flow. Send
+              { "has_discount": true, "discount_value": 15 } to put 15% off
+              this product, and { "has_discount": false } to stop it -
+              discount_value is kept, so switching it back on later needs
+              has_discount alone.
     Returns:  200 + the updated Product
 
 --------------------------------------------------------------------------------
@@ -150,14 +165,17 @@ Product object shape:
   "gemstone_type": "..." | null,
   "gemstone_carat": 0.5 | null,
   "price": 500.75,          // the original price, never discounted
-  "final_price": 400.60,    // after the best running automatic promotion
-  "discount": null | {      // null when no promotion applies
-    "promotion_id": 1,
-    "name_ar": "تخفيضات العيد",
-    "name_en": "Eid Sale",
+  "has_discount": true,     // is the manual per-product discount switched on
+  "discount_value": 20,     // the manual discount percentage (kept even when off)
+  "final_price": 400.60,    // the price to display
+  "discount": null | {      // null when nothing applies
+    "source": "product" | "promotion",
     "type": "percentage" | "fixed",
     "value": 20,
     "amount": 100.15,       // currency taken off THIS product
+    "promotion_id": 1 | null,      // null when source is "product"
+    "name_ar": "تخفيضات العيد" | null,
+    "name_en": "Eid Sale" | null,
     "ends_at": "2026-09-01T00:00:00+00:00" | null
   },
   "stock": 10,
@@ -173,6 +191,22 @@ Note: always display "final_price". It equals "price" when nothing is on
 offer, so it is safe to show unconditionally. Show "price" struck through
 only when "discount" is not null. Promotions that need a code are NEVER
 reflected here - see POST /api/promotions/validate.
+
+There are two independent discount sources and they NEVER stack - whichever
+gives the bigger reduction wins, and "discount.source" tells you which one
+it was:
+
+  "product"    the manual per-product discount (has_discount +
+               discount_value). This is how the current version works: the
+               customer sends a product link over WhatsApp and management
+               sets a discount on that product.
+
+  "promotion"  a running automatic campaign from the promotions section
+               below. Built for later use.
+
+"has_discount" and "discount_value" describe only the manual discount. Do
+not compute prices from them - "final_price" already accounts for both
+sources.
 
 ================================================================================
 CATEGORIES
@@ -235,8 +269,12 @@ Category object shape:
 }
 
 ================================================================================
-PROMOTIONS & DISCOUNT CODES
+PROMOTIONS & DISCOUNT CODES  (built for a later version)
 ================================================================================
+
+Not part of the current WhatsApp flow - day-to-day discounts are set per
+product via PUT /api/products/{product}. These endpoints work today and can
+be left unused until they are needed.
 
 A promotion is either AUTOMATIC or CODE-BASED - the difference is one field:
 

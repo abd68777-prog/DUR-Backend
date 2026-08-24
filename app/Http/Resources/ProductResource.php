@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources;
 
-use App\Services\PromotionService;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use OpenApi\Attributes as OA;
@@ -24,17 +24,20 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'gemstone_carat', type: 'number', format: 'float', nullable: true, example: 0.5),
         new OA\Property(property: 'price', type: 'number', format: 'float', example: 500.75, description: 'The original price, never discounted'),
         new OA\Property(property: 'final_price', type: 'number', format: 'float', example: 400.6, description: 'Price after the best running automatic promotion. Equals price when nothing applies - always safe to display.'),
+        new OA\Property(property: 'has_discount', type: 'boolean', example: true, description: 'Whether a manual per-product discount is switched on'),
+        new OA\Property(property: 'discount_value', type: 'number', format: 'float', nullable: true, example: 20, description: 'The manual discount percentage. Set but ignored while has_discount is false.'),
         new OA\Property(
             property: 'discount',
             nullable: true,
-            description: 'The automatic promotion applied to final_price, or null when none is running. Code-based promotions never appear here.',
+            description: 'The discount actually applied to final_price, or null when there is none. Comes from the manual per-product discount or from a running automatic promotion - whichever is larger. Code-based promotions never appear here.',
             properties: [
-                new OA\Property(property: 'promotion_id', type: 'integer', example: 1),
-                new OA\Property(property: 'name_ar', type: 'string', example: 'تخفيضات العيد'),
-                new OA\Property(property: 'name_en', type: 'string', example: 'Eid Sale'),
+                new OA\Property(property: 'source', type: 'string', enum: ['product', 'promotion'], example: 'product', description: '"product" is the manual discount, "promotion" is a campaign'),
                 new OA\Property(property: 'type', type: 'string', enum: ['percentage', 'fixed'], example: 'percentage'),
                 new OA\Property(property: 'value', type: 'number', format: 'float', example: 20),
                 new OA\Property(property: 'amount', type: 'number', format: 'float', example: 100.15, description: 'Currency amount taken off this product'),
+                new OA\Property(property: 'promotion_id', type: 'integer', nullable: true, description: 'null when source is "product"'),
+                new OA\Property(property: 'name_ar', type: 'string', nullable: true, example: 'تخفيضات العيد'),
+                new OA\Property(property: 'name_en', type: 'string', nullable: true, example: 'Eid Sale'),
                 new OA\Property(property: 'ends_at', type: 'string', format: 'date-time', nullable: true),
             ],
             type: 'object'
@@ -51,8 +54,7 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $price = (float) $this->price;
-        $promotion = app(PromotionService::class)->bestFor($this->resource);
-        $discount = $promotion?->discountOn($price) ?? 0.0;
+        $discount = app(PricingService::class)->discountFor($this->resource);
 
         return [
             'id' => $this->id,
@@ -68,16 +70,10 @@ class ProductResource extends JsonResource
             'gemstone_type' => $this->gemstone_type,
             'gemstone_carat' => $this->gemstone_carat !== null ? (float) $this->gemstone_carat : null,
             'price' => $price,
-            'final_price' => round($price - $discount, 2),
-            'discount' => $promotion === null ? null : [
-                'promotion_id' => $promotion->id,
-                'name_ar' => $promotion->name_ar,
-                'name_en' => $promotion->name_en,
-                'type' => $promotion->type,
-                'value' => (float) $promotion->value,
-                'amount' => $discount,
-                'ends_at' => $promotion->ends_at?->toIso8601String(),
-            ],
+            'has_discount' => $this->has_discount,
+            'discount_value' => $this->discount_value !== null ? (float) $this->discount_value : null,
+            'final_price' => round($price - ($discount?->amount ?? 0.0), 2),
+            'discount' => $discount?->toArray(),
             'stock' => $this->stock,
             'is_active' => $this->is_active,
             'images' => ProductImageResource::collection($this->whenLoaded('images')),
