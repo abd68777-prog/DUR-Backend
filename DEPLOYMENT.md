@@ -86,6 +86,10 @@ server {
 
     index index.php;
 
+    # رفع فيديو الـ hero عبر PUT /api/settings ممكن يوصل 50MB.
+    # الافتراضي 1MB وبيرجّع 413 قبل ما يوصل الطلب لـ Laravel أصلاً.
+    client_max_body_size 64M;
+
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
@@ -103,6 +107,20 @@ server {
 ```
 
 أضف SSL عبر `certbot --nginx` بعد ما الدومين يشاور عالسيرفر.
+
+### حدود الرفع بـ PHP
+
+`client_max_body_size` لحاله ما بيكفي - PHP إله حدوده الخاصة. بملف
+`/etc/php/8.3/fpm/php.ini`:
+
+```ini
+upload_max_filesize = 64M
+post_max_size = 64M
+```
+
+بعدها `systemctl restart php8.3-fpm`. بدون هالتعديل رفع فيديو الـ hero
+بيفشل بصمت (الطلب بيوصل بحقول فاضية، وLaravel بيرجّع خطأ validation مضلّل
+بيقول إنه الملف ناقص).
 
 ## 5. Queue Worker (Supervisor)
 

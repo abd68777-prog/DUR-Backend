@@ -56,6 +56,102 @@ GET /api/user
               { id, clerk_id, name, email, role }
 
 ================================================================================
+SETTINGS
+================================================================================
+
+The editable content of the site - brand, contact details, social links and
+the home page hero. ONE object, never a list: there is a single settings
+record and every key is always present, so no existence checks are needed.
+
+It ships pre-filled, so GET works from day one without anyone saving
+anything first.
+
+--------------------------------------------------------------------------------
+
+GET /api/settings
+    Auth:     none - public, no login required
+    Params:   none
+    Returns:  the Settings object (see the shape below)
+
+--------------------------------------------------------------------------------
+
+PUT /api/settings
+    Auth:     admin only (manager is NOT enough)
+    Body:     application/json, or multipart/form-data when uploading media
+    Update:   PARTIAL. Send only the sections and fields that change;
+              anything omitted keeps its stored value. Send an explicit null
+              to clear a field.
+
+    Field rules:
+        brand.whatsapp_number   digits only, no "+" and no spaces.
+                                Required whenever the brand section is sent,
+                                so it can never end up empty - but updating
+                                another section does not need to resend it.
+        brand.site_url          full URL or null
+        contact.email           valid email or null
+        contact.phone           free text - the version shown to visitors
+        contact.phone_href      free text - goes straight into href="..."
+                                Kept separate on purpose: the display format
+                                is not a valid tel: value.
+        social.*_url            full URLs only (https://...)
+        home_hero.*_button_url  a relative path ("/products", "/#about") OR a
+                                full URL - NOT validated as a URL
+        everything else         plain text, bilingual via _ar / _en
+
+    Media upload:
+        Send multipart/form-data with home_hero[video] and/or
+        home_hero[poster]. The files go to Cloudinary and the resulting full
+        URLs land in video_url / poster_url. Browsers cannot send
+        multipart with PUT, so use POST plus a _method=PUT field:
+
+            const fd = new FormData();
+            fd.append('_method', 'PUT');
+            fd.append('home_hero[poster]', file);
+
+        video   mp4 / webm / mov, up to 50MB
+        poster  image, up to 4MB
+
+    Returns:  200 + the full updated Settings object
+              401 if not logged in
+              403 if the account is not an admin
+              422 + { message, errors } on validation failure
+
+--------------------------------------------------------------------------------
+Settings object shape:
+{
+  "brand": {
+    "site_url": "https://durjewels.com",
+    "whatsapp_number": "963999000000"
+  },
+  "contact": {
+    "phone": "+963 999 000 000",
+    "phone_href": "tel:+963999000000",
+    "email": "info@dur-jewelry.com",
+    "address_ar": "دمشق، سوريا",
+    "address_en": "Damascus, Syria"
+  },
+  "social": {
+    "instagram_url": "https://instagram.com/dur.jewelry",
+    "facebook_url": "https://facebook.com/dur.jewelry"
+  },
+  "home_hero": {
+    "video_url": "<full cloudinary url>" | null,
+    "poster_url": "<full cloudinary url>" | null,
+    "title_line1_ar": "...",       "title_line1_en": "...",
+    "title_line2_ar": "...",       "title_line2_en": "...",
+    "description_ar": "...",       "description_en": "...",
+    "primary_button_label_ar": "...",   "primary_button_label_en": "...",
+    "primary_button_url": "/products",
+    "secondary_button_label_ar": "...", "secondary_button_label_en": "...",
+    "secondary_button_url": "/#about"
+  }
+}
+
+Note: "social" has NO WhatsApp entry on purpose. Build that link from
+brand.whatsapp_number as `https://wa.me/{whatsapp_number}` - a second field
+would only be a copy that can drift out of sync.
+
+================================================================================
 PRODUCTS
 ================================================================================
 

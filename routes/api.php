@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ClerkWebhookController as ApiClerkWebhookController
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PromotionController;
+use App\Http\Controllers\Api\SettingController;
 use Illuminate\Support\Facades\Route;
 
 // أي مستخدم مسجل دخول (أي دور)
@@ -24,6 +25,8 @@ Route::group([], function () {
     // و"validate" كمعرّف عرض وبيرجّع 404.
     Route::get('/promotions/active', [PromotionController::class, 'active']);
     Route::post('/promotions/validate', [PromotionController::class, 'validateCode']);
+
+    Route::get('/settings', [SettingController::class, 'show']);
 
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{product}', [ProductController::class, 'show']);
@@ -64,4 +67,6 @@ Route::middleware(['auth:clerk', 'role:admin'])->group(function () {
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
     Route::delete('/promotions/{promotion}', [PromotionController::class, 'destroy']);
+
+    Route::put('/settings', [SettingController::class, 'update']);
 });
