@@ -24,7 +24,7 @@ class ProductController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
-            new OA\Parameter(name: 'category_id', in: 'query', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'category_id', in: 'query', description: 'Category slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'rings'),
             new OA\Parameter(name: 'is_active', in: 'query', schema: new OA\Schema(type: 'boolean')),
             new OA\Parameter(name: 'search', in: 'query', description: 'Search by name', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', default: 15)),
@@ -61,7 +61,7 @@ class ProductController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
-            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'product', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'gold-ring-21k'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Product data', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
@@ -109,7 +109,7 @@ class ProductController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
-            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'product', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'gold-ring-21k'),
         ],
         requestBody: new OA\RequestBody(
             content: new OA\MediaType(
@@ -142,7 +142,7 @@ class ProductController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
-            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'product', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'gold-ring-21k'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'The product\'s new state', content: new OA\JsonContent(ref: '#/components/schemas/Product')),
@@ -164,7 +164,7 @@ class ProductController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
-            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'product', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'gold-ring-21k'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Deleted', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),
@@ -186,7 +186,7 @@ class ProductController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Products'],
         parameters: [
-            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'product', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'gold-ring-21k'),
             new OA\Parameter(name: 'image', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [

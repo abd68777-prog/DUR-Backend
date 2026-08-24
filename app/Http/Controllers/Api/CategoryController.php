@@ -41,7 +41,7 @@ class CategoryController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Categories'],
         parameters: [
-            new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'category', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'rings'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Category data', content: new OA\JsonContent(ref: '#/components/schemas/Category')),
@@ -89,7 +89,7 @@ class CategoryController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Categories'],
         parameters: [
-            new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'category', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'rings'),
         ],
         requestBody: new OA\RequestBody(
             content: new OA\MediaType(
@@ -122,7 +122,7 @@ class CategoryController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Categories'],
         parameters: [
-            new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'category', in: 'path', required: true, description: 'Slug (preferred) or numeric id', schema: new OA\Schema(type: 'string'), example: 'rings'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Deleted', content: new OA\JsonContent(ref: '#/components/schemas/MessageResponse')),

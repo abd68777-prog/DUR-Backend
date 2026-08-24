@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\UploadedFile;
@@ -13,8 +14,13 @@ class ProductService
     {
         $query = Product::query()->with(['images', 'category']);
 
-        if (isset($filters['category_id'])) {
-            $query->where('category_id', $filters['category_id']);
+        if (filled($filters['category_id'] ?? null)) {
+            $categoryId = $this->resolveCategoryId($filters['category_id']);
+
+            // تصنيف مش موجود لازم يرجّع نتيجة فاضية، مش كل المنتجات.
+            $categoryId === null
+                ? $query->whereRaw('1 = 0')
+                : $query->where('category_id', $categoryId);
         }
 
         if (isset($filters['is_active'])) {
@@ -29,6 +35,21 @@ class ProductService
         }
 
         return $query->latest()->paginate($filters['per_page'] ?? 15);
+    }
+
+    /**
+     * الفلتر بيقبل slug أو id - نفس ما بتعمل الروابط عبر RoutableBySlug.
+     * الـ slug بينجرّب أولاً حتى تصنيف slug تبعه رقمي ما يتفسّر كـ id.
+     */
+    private function resolveCategoryId(string|int $value): ?int
+    {
+        $bySlug = Category::where('slug', $value)->value('id');
+
+        if ($bySlug !== null) {
+            return (int) $bySlug;
+        }
+
+        return is_numeric($value) ? (int) $value : null;
     }
 
     public function create(array $data, array $images = []): Product

@@ -54,9 +54,11 @@ PRODUCTS
 ================================================================================
 
 GET /api/products
-    Auth:     any authenticated user
+    Auth:     none - public, no login required
     Query params (all optional):
-        category_id   integer
+        category_id   string   - category slug (preferred) or numeric id,
+                                 e.g. category_id=rings or category_id=3.
+                                 An unknown category returns an empty list.
         is_active     boolean
         search        string   - matches against name_ar OR name_en
         per_page      integer  - default 15
@@ -66,8 +68,9 @@ GET /api/products
 --------------------------------------------------------------------------------
 
 GET /api/products/{product}
-    Auth:     any authenticated user
-    Path:     product = product id (integer)
+    Auth:     none - public, no login required
+    Path:     product = slug (preferred) or numeric id
+              e.g. /api/products/gold-ring-21k  or  /api/products/12
     Returns:  a single Product
 
 --------------------------------------------------------------------------------
@@ -95,7 +98,7 @@ POST /api/products
 
 PUT /api/products/{product}
     Auth:     admin or manager
-    Path:     product = product id (integer)
+    Path:     product = slug (preferred) or numeric id
     Body:     multipart/form-data - same fields as POST above, but all optional
               (only send the fields you want to change)
     Note:     any images[] sent here are ADDED to the product's existing
@@ -107,7 +110,7 @@ PUT /api/products/{product}
 
 PATCH /api/products/{product}/toggle-active
     Auth:     admin or manager
-    Path:     product = product id (integer)
+    Path:     product = slug (preferred) or numeric id
     Body:     none
     Effect:   flips is_active (true <-> false)
     Returns:  200 + the updated Product
@@ -116,7 +119,7 @@ PATCH /api/products/{product}/toggle-active
 
 DELETE /api/products/{product}
     Auth:     admin only
-    Path:     product = product id (integer)
+    Path:     product = slug (preferred) or numeric id
     Effect:   deletes the product AND all its images from Cloudinary
     Returns:  200 + { message }
 
@@ -124,7 +127,7 @@ DELETE /api/products/{product}
 
 DELETE /api/products/{product}/images/{image}
     Auth:     admin or manager
-    Path:     product = product id (integer)
+    Path:     product = slug (preferred) or numeric id
               image   = product_image id (integer)
     Effect:   deletes one image. If it was the primary image (is_primary),
               the next remaining image (by sort_order) automatically becomes
@@ -161,15 +164,16 @@ CATEGORIES
 ================================================================================
 
 GET /api/categories
-    Auth:     any authenticated user
+    Auth:     none - public, no login required
     Params:   none
     Returns:  array of ALL categories (no pagination)
 
 --------------------------------------------------------------------------------
 
 GET /api/categories/{category}
-    Auth:     any authenticated user
-    Path:     category = category id (integer)
+    Auth:     none - public, no login required
+    Path:     category = slug (preferred) or numeric id
+              e.g. /api/categories/rings  or  /api/categories/12
     Returns:  a single Category
 
 --------------------------------------------------------------------------------
@@ -188,7 +192,7 @@ POST /api/categories
 
 PUT /api/categories/{category}
     Auth:     admin or manager
-    Path:     category = category id (integer)
+    Path:     category = slug (preferred) or numeric id
     Body:     multipart/form-data - same fields as POST above, but all optional
     Note:     uploading a new "image" REPLACES the old one (unlike products,
               a category only has one image).
@@ -198,7 +202,7 @@ PUT /api/categories/{category}
 
 DELETE /api/categories/{category}
     Auth:     admin only
-    Path:     category = category id (integer)
+    Path:     category = slug (preferred) or numeric id
     Effect:   also deletes every product that belongs to this category
               (cascade)
     Returns:  200 + { message }
