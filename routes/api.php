@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ClerkWebhookController as ApiClerkWebhookController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PromotionController;
 use Illuminate\Support\Facades\Route;
 
 // أي مستخدم مسجل دخول (أي دور)
@@ -19,6 +20,11 @@ Route::middleware('auth:clerk')->group(function () {
 });
 
 Route::group([], function () {
+    // لازم يضلوا فوق /promotions/{promotion}، وإلا Laravel بيفسّر "active"
+    // و"validate" كمعرّف عرض وبيرجّع 404.
+    Route::get('/promotions/active', [PromotionController::class, 'active']);
+    Route::post('/promotions/validate', [PromotionController::class, 'validateCode']);
+
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{product}', [ProductController::class, 'show']);
     Route::get('/categories', [CategoryController::class, 'index']);
@@ -46,9 +52,16 @@ Route::middleware(['auth:clerk', 'role:admin,manager'])->group(function () {
     Route::delete('/products/{product}/images/{image}', [ProductController::class, 'destroyImage']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
+
+    Route::get('/promotions', [PromotionController::class, 'index']);
+    Route::get('/promotions/{promotion}', [PromotionController::class, 'show']);
+    Route::post('/promotions', [PromotionController::class, 'store']);
+    Route::put('/promotions/{promotion}', [PromotionController::class, 'update']);
+    Route::patch('/promotions/{promotion}/toggle-active', [PromotionController::class, 'toggleActive']);
 });
 
 Route::middleware(['auth:clerk', 'role:admin'])->group(function () {
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+    Route::delete('/promotions/{promotion}', [PromotionController::class, 'destroy']);
 });

@@ -149,7 +149,17 @@ Product object shape:
   "karat": "18" | "21" | "22" | "24" | null,
   "gemstone_type": "..." | null,
   "gemstone_carat": 0.5 | null,
-  "price": 500.75,
+  "price": 500.75,          // the original price, never discounted
+  "final_price": 400.60,    // after the best running automatic promotion
+  "discount": null | {      // null when no promotion applies
+    "promotion_id": 1,
+    "name_ar": "تخفيضات العيد",
+    "name_en": "Eid Sale",
+    "type": "percentage" | "fixed",
+    "value": 20,
+    "amount": 100.15,       // currency taken off THIS product
+    "ends_at": "2026-09-01T00:00:00+00:00" | null
+  },
   "stock": 10,
   "is_active": true,
   "images": [ { "id": 1, "path": "<full cloudinary url>", "sort_order": 0, "is_primary": true }, ... ],
@@ -158,6 +168,11 @@ Product object shape:
 }
 Note: "images[].path" is the full, ready-to-use Cloudinary image URL - not a
 relative path. Use it directly as an <img src>.
+
+Note: always display "final_price". It equals "price" when nothing is on
+offer, so it is safe to show unconditionally. Show "price" struck through
+only when "discount" is not null. Promotions that need a code are NEVER
+reflected here - see POST /api/promotions/validate.
 
 ================================================================================
 CATEGORIES
@@ -217,6 +232,141 @@ Category object shape:
   "slug": "rings",
   "is_active": true,
   "products_count": 12   // only present from GET /api/dashboard/stats, null elsewhere
+}
+
+================================================================================
+PROMOTIONS & DISCOUNT CODES
+================================================================================
+
+A promotion is either AUTOMATIC or CODE-BASED - the difference is one field:
+
+    code = null   automatic. Applies on its own; the discounted price shows
+                  up as "final_price" on every product it covers.
+    code = "..."  the customer must type the code. It NEVER changes the
+                  prices returned by the product endpoints.
+
+Each promotion covers one of three scopes:
+
+    all          the whole store
+    products     only the products listed in product_ids
+    categories   every product in the listed categories - including products
+                 added to those categories later
+
+A promotion counts as running when is_active is true AND "now" sits inside
+starts_at..ends_at. Either date may be null, meaning open-ended on that side.
+
+When several automatic promotions cover the same product the customer gets
+the largest discount; they never stack.
+
+--------------------------------------------------------------------------------
+
+GET /api/promotions/active
+    Auth:     none - public, no login required
+    Params:   none
+    Returns:  array of running AUTOMATIC promotions - for banners and badges
+    Note:     code-based promotions are deliberately excluded, otherwise the
+              codes would be readable by anyone
+
+--------------------------------------------------------------------------------
+
+POST /api/promotions/validate
+    Auth:     none - public, no login required
+    Body:     { "code": "EID2026" }   required, max 50 chars, case-insensitive
+    Returns:  200 + {
+                "promotion": { ...Promotion... },
+                "products": [ ...Product... ] | null   // null = whole store
+              }
+              404 + { message } if the code is unknown, disabled, or outside
+                                its dates (one shared message on purpose, so
+                                codes cannot be guessed by trial and error)
+              422 + { message, errors } if no code was sent
+
+--------------------------------------------------------------------------------
+
+GET /api/promotions
+    Auth:     admin or manager
+    Query params (optional):
+        running   boolean - true: only promotions live right now
+                            false: only those that are not
+    Returns:  array of ALL promotions (no pagination)
+
+--------------------------------------------------------------------------------
+
+GET /api/promotions/{promotion}
+    Auth:     admin or manager
+    Path:     promotion = numeric id
+    Returns:  a single Promotion
+
+--------------------------------------------------------------------------------
+
+POST /api/promotions
+    Auth:     admin or manager
+    Body:     application/json
+        name_ar        required  string, max 255
+        name_en        required  string, max 255
+        code           optional  string, max 50, letters/numbers/-/_ only,
+                                 unique. Stored and matched uppercase.
+                                 OMIT IT for an automatic promotion.
+        type           required  "percentage" or "fixed"
+        value          required  numeric, >= 0.01
+                                 capped at 100 when type is "percentage"
+        scope          required  "all", "products", or "categories"
+        product_ids    required when scope = "products"     array of product ids
+        category_ids   required when scope = "categories"   array of category ids
+        starts_at      optional  ISO-8601 datetime. Omit to start immediately.
+        ends_at        optional  ISO-8601 datetime, not before starts_at.
+                                 Omit for no expiry.
+        is_active      optional  boolean, defaults to true
+    Returns:  201 + the created Promotion
+
+--------------------------------------------------------------------------------
+
+PUT /api/promotions/{promotion}
+    Auth:     admin or manager
+    Path:     promotion = numeric id
+    Body:     same fields as POST, all optional - send only what changes
+    Note:     product_ids / category_ids REPLACE the current selection, they
+              do not add to it. Changing scope clears the links that no
+              longer apply.
+    Returns:  200 + the updated Promotion
+
+--------------------------------------------------------------------------------
+
+PATCH /api/promotions/{promotion}/toggle-active
+    Auth:     admin or manager
+    Path:     promotion = numeric id
+    Body:     none
+    Effect:   flips is_active without touching the dates - the quickest way
+              to stop a live promotion
+    Returns:  200 + the updated Promotion
+
+--------------------------------------------------------------------------------
+
+DELETE /api/promotions/{promotion}
+    Auth:     admin only
+    Path:     promotion = numeric id
+    Effect:   deletes the promotion and its product/category links. Products
+              and categories themselves are untouched.
+    Returns:  200 + { message }
+
+--------------------------------------------------------------------------------
+Promotion object shape:
+{
+  "id": 1,
+  "name_ar": "تخفيضات العيد",
+  "name_en": "Eid Sale",
+  "code": "EID2026" | null,      // null = applies automatically
+  "type": "percentage" | "fixed",
+  "value": 20,                   // percent, or a currency amount when fixed
+  "scope": "all" | "products" | "categories",
+  "starts_at": "2026-09-01T00:00:00+00:00" | null,
+  "ends_at": "2026-09-10T00:00:00+00:00" | null,
+  "is_active": true,
+  "is_running": true,            // active AND inside its dates right now
+  "products": [ ...Product... ],    // only when scope = "products"
+  "categories": [ ...Category... ], // only when scope = "categories"
+  "created_at": "2026-01-01T12:00:00+00:00",
+  "updated_at": "2026-01-01T12:00:00+00:00"
 }
 
 ================================================================================
