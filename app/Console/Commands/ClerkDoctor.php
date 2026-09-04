@@ -78,13 +78,47 @@ class ClerkDoctor extends Command
         }
 
         try {
-            filled($inlineKey)
-                ? InMemory::plainText($inlineKey, config('clerk.secret_key'))
-                : InMemory::file(base_path(config('clerk.signer_key_path')), config('clerk.secret_key'));
+            $contents = filled($inlineKey)
+                ? InMemory::plainText($inlineKey, config('clerk.secret_key'))->contents
+                : InMemory::file(base_path(config('clerk.signer_key_path')), config('clerk.secret_key'))->contents;
 
-            $this->assert('signer key loads without error', true);
+            $this->assert('signer key is readable', true);
+            $this->assertKeyParses('signer key is a valid public key', $contents);
         } catch (Throwable $e) {
-            $this->assert('signer key loads without error', false, class_basename($e).': '.$e->getMessage());
+            $this->assert('signer key is readable', false, class_basename($e).': '.$e->getMessage());
+        }
+    }
+
+    /**
+     * فحص فعلي للمفتاح.
+     *
+     * InMemory::file()/plainText() بس بيتأكدوا إنه المحتوى مش فاضي - ما
+     * بيقرأوا المفتاح. يعني ملف مكسور (مثلاً PEM انضغط بسطر واحد) بيمرق
+     * عندهن، وبعدين كل توكن بينرفض بصمت لأن التحقق من التوقيع بيفشل.
+     */
+    private function assertKeyParses(string $label, string $contents): void
+    {
+        $key = @openssl_pkey_get_public($contents);
+
+        if ($key === false) {
+            $reason = openssl_error_string() ?: 'not a parsable PEM public key';
+
+            // أشهر سبب: الأسطر انضغطت لسطر واحد وقت النسخ.
+            $hint = ! str_contains(trim($contents), "\n")
+                ? 'the key is on a single line - a PEM file needs real line breaks'
+                : $reason;
+
+            $this->assert($label, false, $hint);
+
+            return;
+        }
+
+        $bits = openssl_pkey_get_details($key)['bits'] ?? null;
+
+        $this->assert($label, true);
+
+        if ($bits) {
+            $this->line("       {$bits}-bit RSA");
         }
     }
 
@@ -117,12 +151,7 @@ class ClerkDoctor extends Command
             return;
         }
 
-        try {
-            InMemory::plainText($key);
-            $this->assert('second signer key loads without error', true);
-        } catch (Throwable $e) {
-            $this->assert('second signer key loads without error', false, class_basename($e).': '.$e->getMessage());
-        }
+        $this->assertKeyParses('second signer key is a valid public key', $key);
     }
 
     private function checkGuard(): void
