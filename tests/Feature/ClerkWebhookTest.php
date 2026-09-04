@@ -58,6 +58,66 @@ class ClerkWebhookTest extends TestCase
             ->assertStatus(400);
     }
 
+    public function test_webhook_accepts_a_signature_from_the_second_instance(): void
+    {
+        // أثناء الانتقال لـ Clerk Production ممكن يكون في webhook من كل
+        // instance عم يوصل لنفس الـ endpoint، وكل واحد إله Signing Secret خاص.
+        $devSecret = 'whsec_ZGV2c2VjcmV0Zm9ydGVzdGluZ29ubHkxMjM0';
+        Config::set('services.clerk.dev_webhook_secret', $devSecret);
+
+        $payload = $this->userCreatedPayload('user_dev', 'dev@example.com');
+        $webhook = new Webhook($devSecret);
+        $msgId = 'msg_'.Str::random(10);
+        $timestamp = time();
+
+        $this->call(
+            'POST',
+            '/api/webhooks/clerk',
+            server: $this->toServerHeaders([
+                'svix-id' => $msgId,
+                'svix-timestamp' => (string) $timestamp,
+                'svix-signature' => $webhook->sign($msgId, $timestamp, $payload),
+            ]),
+            content: $payload
+        )->assertOk();
+
+        $this->assertDatabaseHas('users', ['clerk_id' => 'user_dev']);
+    }
+
+    public function test_webhook_still_accepts_the_primary_signature_when_a_second_is_configured(): void
+    {
+        Config::set('services.clerk.dev_webhook_secret', 'whsec_ZGV2c2VjcmV0Zm9ydGVzdGluZ29ubHkxMjM0');
+
+        $payload = $this->userCreatedPayload('user_prod', 'prod@example.com');
+
+        $this->postSigned($payload)->assertOk();
+
+        $this->assertDatabaseHas('users', ['clerk_id' => 'user_prod']);
+    }
+
+    public function test_webhook_rejects_a_signature_from_neither_secret(): void
+    {
+        Config::set('services.clerk.dev_webhook_secret', 'whsec_ZGV2c2VjcmV0Zm9ydGVzdGluZ29ubHkxMjM0');
+
+        $payload = $this->userCreatedPayload('user_x', 'x@example.com');
+        $stranger = new Webhook('whsec_c3RyYW5nZXJzZWNyZXRub3RvdXJzMTIzNDU2');
+        $msgId = 'msg_'.Str::random(10);
+        $timestamp = time();
+
+        $this->call(
+            'POST',
+            '/api/webhooks/clerk',
+            server: $this->toServerHeaders([
+                'svix-id' => $msgId,
+                'svix-timestamp' => (string) $timestamp,
+                'svix-signature' => $stranger->sign($msgId, $timestamp, $payload),
+            ]),
+            content: $payload
+        )->assertStatus(400);
+
+        $this->assertDatabaseCount('users', 0);
+    }
+
     public function test_webhook_rejects_invalid_signature(): void
     {
         $payload = $this->userCreatedPayload('user_123', 'test@example.com');

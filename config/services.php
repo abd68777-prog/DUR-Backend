@@ -37,6 +37,10 @@ return [
 
     'clerk' => [
         'webhook_secret' => env('CLERK_WEBHOOK_SECRET'),
+
+        // مؤقت: سرّ الـ webhook تبع instance التطوير، لو كان موجّه لنفس
+        // الـ endpoint أثناء الانتقال. احذف المتغيّر لما يخلص الاختبار.
+        'dev_webhook_secret' => env('CLERK_DEV_WEBHOOK_SECRET'),
     ],
 
 ];

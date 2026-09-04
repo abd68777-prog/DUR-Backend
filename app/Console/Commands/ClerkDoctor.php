@@ -29,6 +29,7 @@ class ClerkDoctor extends Command
 
         $this->checkRequiredConfig();
         $this->checkSignerKey();
+        $this->checkAdditionalIssuer();
         $this->checkGuard();
         $this->checkOrigins();
         $this->checkLocale();
@@ -87,13 +88,54 @@ class ClerkDoctor extends Command
         }
     }
 
+    /**
+     * المصدر الإضافي المؤقت. بينطبع كتحذير حتى ما ينتسى مفعّل بعد الإطلاق -
+     * وجوده معناه إنه توكنات من instance تاني لسه مقبولة.
+     */
+    private function checkAdditionalIssuer(): void
+    {
+        $issuer = config('clerk.dev_issuer');
+        $key = config('clerk.dev_signer_key');
+
+        if (blank($issuer)) {
+            $this->line('  <fg=green>[ OK ]</> production issuer only (no temporary second issuer)');
+
+            return;
+        }
+
+        $this->assert(
+            "a SECOND issuer is accepted: {$issuer}",
+            false,
+            'temporary - remove CLERK_DEV_ISSUER once the frontend is fully on production',
+            warnOnly: true
+        );
+
+        // issuer بلا مفتاح = كل توكن منه بينرفض بصمت.
+        $this->assert('CLERK_DEV_SIGNER_KEY is set for it', filled($key));
+
+        if (blank($key)) {
+            return;
+        }
+
+        try {
+            InMemory::plainText($key);
+            $this->assert('second signer key loads without error', true);
+        } catch (Throwable $e) {
+            $this->assert('second signer key loads without error', false, class_basename($e).': '.$e->getMessage());
+        }
+    }
+
     private function checkGuard(): void
     {
         try {
-            new ClerkGuard;
-            $this->assert('ClerkGuard can be constructed', true);
+            // من الـ container مش new: هيك منفحص الـ guard يلي فعلاً بينستخدم
+            // (MultiIssuerClerkGuard مربوط محلّه بـ AppServiceProvider).
+            $guard = app(ClerkGuard::class);
+
+            $this->assert('the auth guard can be constructed', true);
+            $this->line('       using: '.$guard::class);
         } catch (Throwable $e) {
-            $this->assert('ClerkGuard can be constructed', false, class_basename($e).': '.$e->getMessage());
+            $this->assert('the auth guard can be constructed', false, class_basename($e).': '.$e->getMessage());
         }
     }
 

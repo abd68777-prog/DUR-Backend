@@ -50,4 +50,24 @@ return [
     | Path to your public JWT key file. Used as a fallback when signer_key is not set.
     */
     'signer_key_path' => env('CLERK_SIGNER_KEY_PATH', 'clerk.pem'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | مصدر توكن إضافي - مؤقت
+    |--------------------------------------------------------------------------
+    | القيم فوق هي بيئة الإنتاج. هدول بيسمحوا مؤقتاً بقبول توكنات جاية من
+    | instance تاني بنفس الوقت، لأن الفرونت لسه بمرحلة اختبار: الجهاز المحلي
+    | شغّال على مفاتيح التطوير بينما الموقع المنشور صار يبعت توكنات الإنتاج.
+    |
+    | signer_key هون هو محتوى الـ PEM نصّاً (Clerk dashboard -> API keys ->
+    | JWKS Public Key)، مش مسار ملف - حتى ما يصير في ملف تاني لازم ينرفع
+    | يدوياً عالسيرفر.
+    |
+    | لإلغاء دعم المصدر التاني: احذف CLERK_DEV_ISSUER من .env وشغّل
+    | php artisan config:cache. ما بدو ولا تعديل كود.
+    */
+    'dev_issuer' => env('CLERK_DEV_ISSUER'),
+
+    // str_replace احتياطي: بيشتغل سواء فسّر phpdotenv الـ \n أو مرّرها حرفياً.
+    'dev_signer_key' => str_replace('\n', "\n", (string) env('CLERK_DEV_SIGNER_KEY')),
 ];

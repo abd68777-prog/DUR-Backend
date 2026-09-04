@@ -26,7 +26,6 @@ class ClerkWebhookController extends Controller
     )]
     public function handle(Request $request): JsonResponse
     {
-        $secret = config('services.clerk.webhook_secret');
         $payload = $request->getContent();
 
         $headers = [
@@ -35,12 +34,9 @@ class ClerkWebhookController extends Controller
             'svix-signature' => $request->header('svix-signature'),
         ];
 
-        try {
-            $wh = new Webhook($secret);
-            $verified = $wh->verify($payload, $headers);
-        } catch (WebhookVerificationException $e) {
-            Log::warning('Clerk webhook verification failed', ['error' => $e->getMessage()]);
+        $verified = $this->verifyAgainstAnySecret($payload, $headers);
 
+        if ($verified === null) {
             return response()->json(['message' => 'Invalid signature'], 400);
         }
 
@@ -61,6 +57,41 @@ class ClerkWebhookController extends Controller
         };
 
         return response()->json(['message' => 'ok']);
+    }
+
+    /**
+     * بيجرّب كل سرّ مضبوط ويرجّع أول حمولة تتحقق، أو null إذا ما مرقت ولا وحدة.
+     *
+     * منقبل أكتر من سرّ لأن كل Clerk instance بيعطي Signing Secret خاص فيه،
+     * وأثناء الانتقال ممكن يكون في webhook من instance التطوير وتاني من
+     * الإنتاج عم يوصلوا لنفس الـ endpoint. الرد بـ 400 على واحد منهن معناها
+     * Clerk بيضل يعيد المحاولة عليه للأبد.
+     *
+     * @param  array<string, string|null>  $headers
+     */
+    private function verifyAgainstAnySecret(string $payload, array $headers): array|string|null
+    {
+        $secrets = array_filter([
+            config('services.clerk.webhook_secret'),
+            config('services.clerk.dev_webhook_secret'),
+        ]);
+
+        $lastError = 'no webhook secret configured';
+
+        foreach ($secrets as $secret) {
+            try {
+                return (new Webhook($secret))->verify($payload, $headers);
+            } catch (WebhookVerificationException $e) {
+                $lastError = $e->getMessage();
+            }
+        }
+
+        Log::warning('Clerk webhook verification failed', [
+            'error' => $lastError,
+            'secrets_tried' => count($secrets),
+        ]);
+
+        return null;
     }
 
     private function handleUserCreated(array $data): void
